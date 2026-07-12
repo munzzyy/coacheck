@@ -138,6 +138,33 @@ class LabelVariants(unittest.TestCase):
         self.assertEqual(parse_coa("purity: 95%\n").purity_pct, 95.0)
 
 
+class DecimalSeparatorVariants(unittest.TestCase):
+    """COAs from outside the US/UK commonly write decimals with a comma
+    ("98,99%") instead of a dot - both must parse to the identical float."""
+
+    def test_purity_comma_decimal(self):
+        self.assertEqual(parse_coa("Purity: 98,99%\n").purity_pct, 98.99)
+
+    def test_net_content_comma_decimal(self):
+        self.assertEqual(parse_coa("Net Content: 89,99%\n").net_content_pct, 89.99)
+
+    def test_mass_comma_decimal(self):
+        self.assertEqual(parse_coa("Net Weight: 5,5mg\n").mass_mg, 5.5)
+
+    def test_dot_decimal_still_parses_normally(self):
+        # Regression guard: comma support must not disturb the common case.
+        self.assertEqual(parse_coa("Purity: 98.99%\n").purity_pct, 98.99)
+
+    def test_mixed_dot_and_comma_decimals_in_same_document(self):
+        # Dot-decimal mass alongside comma-decimal purity and net content -
+        # each field parses independently, so mixed conventions in one
+        # document (or a copy-pasted template) don't cross-contaminate.
+        coa = parse_coa("Net Weight: 5mg\nPurity: 98,99%\nNet Content: 89,99%\n")
+        self.assertEqual(coa.mass_mg, 5.0)
+        self.assertEqual(coa.purity_pct, 98.99)
+        self.assertEqual(coa.net_content_pct, 89.99)
+
+
 class Robustness(unittest.TestCase):
     def test_empty_text_returns_all_none(self):
         coa = parse_coa("")

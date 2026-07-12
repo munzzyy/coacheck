@@ -27,7 +27,12 @@ MAX_COA_TEXT_CHARS = 100_000
 # Optional qualifier some COAs put in front of a percentage ("Purity: >=98%").
 # Stripped and ignored; the number itself is what gets reported.
 _QUALIFIER = r"(?:>=|<=|~|>|<|≥|≤)?\s*"
-_PCT_VALUE = _QUALIFIER + r"(\d+(?:\.\d+)?)\s*%?"
+
+# A decimal number, accepting either a dot or a comma as the separator -
+# COAs from outside the US/UK commonly write "98,99%" rather than "98.99%".
+# _first_float_match normalizes the comma before calling float() on it.
+_DECIMAL_VALUE = r"(\d+(?:[.,]\d+)?)"
+_PCT_VALUE = _QUALIFIER + _DECIMAL_VALUE + r"\s*%?"
 
 
 _PRODUCT_PATTERNS = [
@@ -53,11 +58,11 @@ _NET_CONTENT_PATTERNS = [
 ]
 
 _MASS_PATTERNS = [
-    re.compile(r"^net\s*weight\s*[:\-]\s*(\d+(?:\.\d+)?)\s*mg\b", re.IGNORECASE),
-    re.compile(r"^quantity\s*[:\-]\s*(\d+(?:\.\d+)?)\s*mg\b", re.IGNORECASE),
-    re.compile(r"^vial\s*(?:content|weight|size)\s*[:\-]\s*(\d+(?:\.\d+)?)\s*mg\b", re.IGNORECASE),
-    re.compile(r"^fill\s*weight\s*[:\-]\s*(\d+(?:\.\d+)?)\s*mg\b", re.IGNORECASE),
-    re.compile(r"^(?:mass|weight)\s*[:\-]\s*(\d+(?:\.\d+)?)\s*mg\b", re.IGNORECASE),
+    re.compile(r"^net\s*weight\s*[:\-]\s*" + _DECIMAL_VALUE + r"\s*mg\b", re.IGNORECASE),
+    re.compile(r"^quantity\s*[:\-]\s*" + _DECIMAL_VALUE + r"\s*mg\b", re.IGNORECASE),
+    re.compile(r"^vial\s*(?:content|weight|size)\s*[:\-]\s*" + _DECIMAL_VALUE + r"\s*mg\b", re.IGNORECASE),
+    re.compile(r"^fill\s*weight\s*[:\-]\s*" + _DECIMAL_VALUE + r"\s*mg\b", re.IGNORECASE),
+    re.compile(r"^(?:mass|weight)\s*[:\-]\s*" + _DECIMAL_VALUE + r"\s*mg\b", re.IGNORECASE),
 ]
 
 _BATCH_PATTERNS = [
@@ -136,7 +141,7 @@ def _first_float_match(lines: list[str], patterns: list[re.Pattern]) -> Optional
             m = pattern.match(stripped)
             if m:
                 try:
-                    return float(m.group(1))
+                    return float(m.group(1).replace(",", "."))
                 except ValueError:
                     continue
     return None
