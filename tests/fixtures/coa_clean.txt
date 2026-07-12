@@ -1,0 +1,13 @@
+Certificate of Analysis
+
+Product Name: Research Compound RC-118
+Batch/Lot Number: RC118-20260214-A
+Net Weight: 5 mg
+HPLC Purity: 99.1%
+Net Peptide Content: 91.5%
+Test Method: RP-HPLC-MS
+Test Date: 2026-02-14
+Testing Laboratory: Meridian Analytical Labs
+
+Notes: Sample analyzed by reversed-phase HPLC coupled with mass spectrometry.
+Result applies only to the batch listed above.

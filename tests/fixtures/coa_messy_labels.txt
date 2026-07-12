@@ -1,0 +1,11 @@
+CERTIFICATE OF ANALYSIS
+========================
+
+Peptide Name - Sample Peptide SP-200
+Lot No - SP200/2026-11
+Quantity - 5 mg
+Purity (HPLC) - 98.9%
+Peptide Content - 90.2%
+Testing Method - reverse-phase HPLC
+Date Tested - 11 May 2026
+Test Lab - Harborview Analytical

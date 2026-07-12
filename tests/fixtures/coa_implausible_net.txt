@@ -1,0 +1,10 @@
+Certificate of Analysis
+
+Product Name: Test Article TA-30
+Batch/Lot Number: TA30-118
+Net Weight: 5 mg
+HPLC Purity: 99.4%
+Net Peptide Content: 104.0%
+Test Method: HPLC-MS
+Test Date: 2026-06-01
+Testing Laboratory: Riverstone QC
