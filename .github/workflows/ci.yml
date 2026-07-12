@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.9", "3.11", "3.12", "3.13"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run tests (stdlib only, no install needed)
+        run: python -m unittest discover -s tests -t . -v
+      - name: Smoke-test the CLI end to end
+        run: |
+          python -m coacheck parse tests/fixtures/coa_clean.txt
+          python -m coacheck parse tests/fixtures/coa_clean.txt --json
+          python -m coacheck recon --vial 5 --water 2 --dose 250
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install noslop-lint
+        run: pip install noslop-lint==0.10.0
+      - name: Lint source for AI writing tells
+        run: git ls-files -z '*.py' | xargs -0r noslop --no-config
+      - name: Lint docs for AI writing tells (prose mode)
+        run: git ls-files -z '*.md' | xargs -0r noslop --no-config --prose
