@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="725" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14">
+<rect width="840" height="725" rx="8" fill="#0d1117"/>
+<rect width="840" height="30" rx="8" fill="#161b22"/>
+<rect y="22" width="840" height="8" fill="#161b22"/>
+<circle cx="18" cy="15" r="5.5" fill="#ff5f57"/>
+<circle cx="38" cy="15" r="5.5" fill="#febc2e"/>
+<circle cx="58" cy="15" r="5.5" fill="#28c840"/>
+<text x="420" y="19" text-anchor="middle" fill="#8b949e" font-size="12">coacheck parse coa_hidden_shortfall.txt</text>
+<text x="16.0" y="44" fill="#98c379" font-weight="normal" xml:space="preserve">$</text>
+<text x="24.4" y="44" fill="#abb2bf" font-weight="normal" xml:space="preserve"> coacheck parse coa_hidden_shortfall.txt</text>
+<text x="16.0" y="82" fill="#abb2bf" font-weight="normal" xml:space="preserve">Certificate of Analysis - parsed fields</text>
+<text x="16.0" y="101" fill="#abb2bf" font-weight="normal" xml:space="preserve">  Product name        : Research Compound RC-220</text>
+<text x="16.0" y="120" fill="#abb2bf" font-weight="normal" xml:space="preserve">  HPLC purity         : 99.2%</text>
+<text x="16.0" y="139" fill="#abb2bf" font-weight="normal" xml:space="preserve">  Net peptide content : 61.5%</text>
+<text x="16.0" y="158" fill="#abb2bf" font-weight="normal" xml:space="preserve">  Mass / quantity     : 10 mg</text>
+<text x="16.0" y="177" fill="#abb2bf" font-weight="normal" xml:space="preserve">  Batch / lot         : (not found)</text>
+<text x="16.0" y="196" fill="#abb2bf" font-weight="normal" xml:space="preserve">  Test date           : 2026-06-20</text>
+<text x="16.0" y="215" fill="#abb2bf" font-weight="normal" xml:space="preserve">  Test method         : RP-HPLC-MS</text>
+<text x="16.0" y="234" fill="#abb2bf" font-weight="normal" xml:space="preserve">  Testing lab         : In-House</text>
+<text x="16.0" y="272" fill="#abb2bf" font-weight="normal" xml:space="preserve">Purity math</text>
+<text x="16.0" y="291" fill="#abb2bf" font-weight="normal" xml:space="preserve">  Labeled mass              : 10 mg</text>
+<text x="16.0" y="310" fill="#abb2bf" font-weight="normal" xml:space="preserve">  Actual deliverable peptide: 6.101 mg (61.0% of labeled)</text>
+<text x="16.0" y="329" fill="#abb2bf" font-weight="normal" xml:space="preserve">  Shortfall                 : 3.899 mg (39.0%)</text>
+<text x="16.0" y="367" fill="#abb2bf" font-weight="normal" xml:space="preserve">Red-flag checklist</text>
+<text x="16.0" y="386" fill="#abb2bf" font-weight="normal" xml:space="preserve">  [PASS] CC-PURITY        Purity at or above the research-grade line</text>
+<text x="16.0" y="405" fill="#abb2bf" font-weight="normal" xml:space="preserve">         Stated purity is 99.2%.</text>
+<text x="16.0" y="424" fill="#abb2bf" font-weight="normal" xml:space="preserve">  [WARN] CC-BATCH         No batch/lot number found</text>
+<text x="16.0" y="443" fill="#abb2bf" font-weight="normal" xml:space="preserve">         The document doesn&#x27;t reference a batch or lot number, so this result can&#x27;t be tied to a</text>
+<text x="16.0" y="462" fill="#abb2bf" font-weight="normal" xml:space="preserve">   specific production run.</text>
+<text x="16.0" y="481" fill="#abb2bf" font-weight="normal" xml:space="preserve">  [WARN] CC-LAB           Testing laboratory not actually named</text>
+<text x="16.0" y="500" fill="#abb2bf" font-weight="normal" xml:space="preserve">         The lab field holds a placeholder value (&#x27;In-House&#x27;) rather than a lab name.</text>
+<text x="16.0" y="519" fill="#abb2bf" font-weight="normal" xml:space="preserve">  [PASS] CC-METHOD        Test method named</text>
+<text x="16.0" y="538" fill="#abb2bf" font-weight="normal" xml:space="preserve">         Method: RP-HPLC-MS</text>
+<text x="16.0" y="557" fill="#abb2bf" font-weight="normal" xml:space="preserve">  [PASS] CC-DATE          Test date present</text>
+<text x="16.0" y="576" fill="#abb2bf" font-weight="normal" xml:space="preserve">         Test date: 2026-06-20</text>
+<text x="16.0" y="595" fill="#abb2bf" font-weight="normal" xml:space="preserve">  [PASS] CC-PURITY-METHOD Purity is backed by a named method</text>
+<text x="16.0" y="614" fill="#abb2bf" font-weight="normal" xml:space="preserve">         Method: RP-HPLC-MS</text>
+<text x="16.0" y="633" fill="#abb2bf" font-weight="normal" xml:space="preserve">  [PASS] CC-NET           Net peptide content is within a plausible range</text>
+<text x="16.0" y="652" fill="#abb2bf" font-weight="normal" xml:space="preserve">         Net peptide content: 61.5%</text>
+<text x="16.0" y="690" fill="#abb2bf" font-weight="normal" xml:space="preserve">0 fail, 2 warn, 5 pass  (7 checks)</text>
+</svg>

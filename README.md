@@ -4,6 +4,8 @@
 [![License: Prosperity 3.0.0](https://img.shields.io/badge/license-Prosperity--3.0.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](pyproject.toml)
 
+![coacheck parsing a COA with 99.2% purity but only 61.5% net peptide content, computing a 39% deliverable-mass shortfall and flagging a missing batch number and a placeholder lab name](docs/media/demo.svg)
+
 This is an informational parsing and calculator tool. It does not endorse, recommend, source, or
 facilitate the purchase of any compound, and nothing here is medical advice.
 
