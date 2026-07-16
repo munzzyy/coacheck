@@ -138,3 +138,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). New label variants and new checks land w
 ## License
 
 MIT — free to use, change, and ship, commercial or not. See [LICENSE](LICENSE).
+
+## Support
+
+If coacheck saved you from a thin COA, [sponsoring](https://github.com/sponsors/munzzyy) is what keeps it maintained.
