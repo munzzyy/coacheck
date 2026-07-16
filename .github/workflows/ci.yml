@@ -47,3 +47,43 @@ jobs:
         run: git ls-files -z '*.py' | xargs -0r noslop --no-config
       - name: Lint docs for AI writing tells (prose mode)
         run: git ls-files -z '*.md' | xargs -0r noslop --no-config --prose
+      - name: Lint the extension's own JS/HTML for AI writing tells (code mode)
+        # vendor/ is the unmodified upstream Tesseract.js build, not anything written here.
+        run: |
+          git ls-files -z 'extension/**/*.js' 'extension/**/*.html' \
+            'tests/web_parity/*.mjs' 'tests/js/*.mjs' \
+            | grep -zv '^extension/vendor/' \
+            | xargs -0r noslop --no-config
+
+  # extension/engine/ is a JS port of the Python engine (parser/purity/recon/redflags). This
+  # proves it stays in exact numeric and structural agreement with the real coacheck package -
+  # see tests/web_parity/ - so the extension can never quietly disagree with the CLI.
+  js-parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: "22"
+      - name: JS engine + crop-math unit tests
+        run: node --test tests/js/*.test.mjs
+      - name: Python/JS engine parity
+        run: |
+          python3 tests/web_parity/gen_fixtures.py
+          node tests/web_parity/check.mjs
+
+  web-ext-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: "22"
+      - run: npx --yes web-ext@10.5.0 lint --source-dir=extension

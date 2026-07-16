@@ -95,6 +95,16 @@ Reconstitution
 `--dose` is in mcg by default; pass `--unit mg` if you'd rather give it in mg. `--json` works
 here too.
 
+## Browser extension
+
+`extension/` is a Manifest V3 browser extension (Firefox and Chrome, one codebase) that
+does the same parsing and math without the command line: drag a box over a COA on any page,
+it OCRs that region locally - bundled OCR engine, no network call, nothing leaves your
+machine - and shows the parsed fields, purity math, a reconstitution calculator, and the
+red-flag checklist right there on the page. See [extension/README.md](extension/README.md)
+for how to load it, the exact permissions it asks for and why, and how its JS port of this
+engine is pinned to match the Python package exactly.
+
 ## What it checks / does
 
 - Parses a COA text blob for product name, HPLC purity, net peptide content, mass/quantity,
