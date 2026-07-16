@@ -22,3 +22,13 @@ htmlcov/
 *.swp
 .DS_Store
 Thumbs.db
+
+# Node (extension build/tests)
+node_modules/
+
+# web-parity: fixtures are regenerated fresh every run (see tests/web_parity/gen_fixtures.py)
+tests/web_parity/fixtures/
+
+# web-ext packaging output
+extension-artifacts/
+web-ext-artifacts/

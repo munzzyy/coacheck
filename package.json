@@ -1,0 +1,12 @@
+{
+  "name": "coacheck-extension",
+  "version": "0.1.0",
+  "description": "Browser extension build + JS engine parity tests for coacheck. The Python package (coacheck/) is the real project and has no Node dependency - this file only covers extension/ and tests/js|web_parity.",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test tests/js/*.test.mjs",
+    "parity": "python3 tests/web_parity/gen_fixtures.py && node tests/web_parity/check.mjs"
+  }
+}

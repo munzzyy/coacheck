@@ -1,0 +1,119 @@
+[
+  { "name": "fixture_coa_clean", "type": "parse", "fixture": "coa_clean.txt" },
+  { "name": "fixture_coa_implausible_net", "type": "parse", "fixture": "coa_implausible_net.txt" },
+  { "name": "fixture_coa_low_purity", "type": "parse", "fixture": "coa_low_purity.txt" },
+  { "name": "fixture_coa_messy_labels", "type": "parse", "fixture": "coa_messy_labels.txt" },
+  { "name": "fixture_coa_minimal", "type": "parse", "fixture": "coa_minimal.txt" },
+  { "name": "fixture_coa_missing_batch", "type": "parse", "fixture": "coa_missing_batch.txt" },
+  { "name": "fixture_coa_missing_lab", "type": "parse", "fixture": "coa_missing_lab.txt" },
+  { "name": "fixture_coa_no_method", "type": "parse", "fixture": "coa_no_method.txt" },
+
+  { "name": "parse_empty_text", "type": "parse", "text": "" },
+  { "name": "parse_whitespace_only", "type": "parse", "text": "   \n\n\t  \n" },
+  { "name": "parse_first_match_wins_on_duplicate_labels", "type": "parse", "text": "Purity: 91%\nPurity: 99%\n" },
+  { "name": "parse_extra_whitespace_around_separator", "type": "parse", "text": "Purity   :    98.5 %\n" },
+  { "name": "parse_unicode_qualifier", "type": "parse", "text": "Purity: ≥99%\n" },
+  { "name": "parse_inequality_qualifier", "type": "parse", "text": "Purity: >=98%\n" },
+  { "name": "parse_purity_percent_label_no_value_percent", "type": "parse", "text": "Purity (%): 97.1\n" },
+  { "name": "parse_comma_decimal_purity", "type": "parse", "text": "Purity: 98,99%\n" },
+  { "name": "parse_comma_decimal_mass", "type": "parse", "text": "Net Weight: 5,5mg\n" },
+  {
+    "name": "parse_mixed_dot_and_comma_decimals",
+    "type": "parse",
+    "text": "Net Weight: 5mg\nPurity: 98,99%\nNet Content: 89,99%\n"
+  },
+  {
+    "name": "parse_purity_over_100_impossible",
+    "type": "parse",
+    "text": "Product Name: Bad Batch BB-1\nNet Weight: 5 mg\nPurity: 150%\nBatch Number: BB1-001\n"
+  },
+  {
+    "name": "parse_unrelated_line_not_matched",
+    "type": "parse",
+    "text": "Note: no analytical method is disclosed here.\n"
+  },
+  { "name": "parse_lot_number_variant", "type": "parse", "text": "Lot Number: L-99\n" },
+  { "name": "parse_batch_no_variant", "type": "parse", "text": "Batch No: B-12\n" },
+
+  { "name": "purity_basic_no_net_content", "type": "purity", "labeled_mg": 5.0, "purity_pct": 98.0 },
+  {
+    "name": "purity_and_net_content_combine",
+    "type": "purity",
+    "labeled_mg": 5.0,
+    "purity_pct": 99.0,
+    "net_content_pct": 92.0
+  },
+  { "name": "purity_100_no_net_content", "type": "purity", "labeled_mg": 10.0, "purity_pct": 100.0 },
+  { "name": "purity_zero_is_total_shortfall", "type": "purity", "labeled_mg": 10.0, "purity_pct": 0.0 },
+  {
+    "name": "purity_100_and_net_content",
+    "type": "purity",
+    "labeled_mg": 2.0,
+    "purity_pct": 100.0,
+    "net_content_pct": 80.0
+  },
+  { "name": "purity_over_100_computes_through", "type": "purity", "labeled_mg": 5.0, "purity_pct": 150.0 },
+  {
+    "name": "purity_net_content_over_100_computes_through",
+    "type": "purity",
+    "labeled_mg": 5.0,
+    "purity_pct": 99.0,
+    "net_content_pct": 110.0
+  },
+
+  { "name": "recon_basic_draw", "type": "recon", "vial_mg": 5.0, "water_ml": 2.0, "dose_mcg": 250.0 },
+  { "name": "recon_full_vial_as_single_dose", "type": "recon", "vial_mg": 1.0, "water_ml": 1.0, "dose_mcg": 1000.0 },
+  { "name": "recon_ten_mg_vial", "type": "recon", "vial_mg": 10.0, "water_ml": 5.0, "dose_mcg": 100.0 },
+  { "name": "recon_dose_exceeds_vial", "type": "recon", "vial_mg": 1.0, "water_ml": 1.0, "dose_mcg": 2000.0 },
+  { "name": "recon_dose_exactly_equals_vial", "type": "recon", "vial_mg": 1.0, "water_ml": 1.0, "dose_mcg": 1000.0 },
+
+  {
+    "name": "redflags_clean_all_pass",
+    "type": "redflags",
+    "coa": {
+      "product_name": "Research Compound RC-1",
+      "purity_pct": 99.0,
+      "net_content_pct": 91.0,
+      "mass_mg": 5.0,
+      "batch_lot": "RC1-001",
+      "test_date": "2026-01-01",
+      "method": "HPLC-MS",
+      "lab_name": "Example Analytical Labs"
+    }
+  },
+  { "name": "redflags_missing_purity", "type": "redflags", "coa": { "purity_pct": null } },
+  { "name": "redflags_purity_over_100", "type": "redflags", "coa": { "purity_pct": 101.0 } },
+  { "name": "redflags_purity_negative", "type": "redflags", "coa": { "purity_pct": -5.0 } },
+  { "name": "redflags_purity_below_threshold", "type": "redflags", "coa": { "purity_pct": 97.9 } },
+  { "name": "redflags_purity_at_threshold", "type": "redflags", "coa": { "purity_pct": 98.0 } },
+  { "name": "redflags_purity_at_100", "type": "redflags", "coa": { "purity_pct": 100.0 } },
+  { "name": "redflags_missing_batch", "type": "redflags", "coa": { "batch_lot": null } },
+  { "name": "redflags_present_batch", "type": "redflags", "coa": { "batch_lot": "X-1" } },
+  { "name": "redflags_missing_lab", "type": "redflags", "coa": { "lab_name": null } },
+  { "name": "redflags_placeholder_lab_na", "type": "redflags", "coa": { "lab_name": "N/A" } },
+  { "name": "redflags_placeholder_lab_inhouse", "type": "redflags", "coa": { "lab_name": "In-house" } },
+  { "name": "redflags_placeholder_lab_undisclosed", "type": "redflags", "coa": { "lab_name": "Undisclosed" } },
+  { "name": "redflags_named_lab", "type": "redflags", "coa": { "lab_name": "Example Labs Inc." } },
+  { "name": "redflags_missing_method", "type": "redflags", "coa": { "method": null } },
+  { "name": "redflags_missing_date", "type": "redflags", "coa": { "test_date": null } },
+  {
+    "name": "redflags_purity_without_method",
+    "type": "redflags",
+    "coa": { "purity_pct": 99.0, "method": null }
+  },
+  {
+    "name": "redflags_purity_with_method",
+    "type": "redflags",
+    "coa": { "purity_pct": 99.0, "method": "HPLC" }
+  },
+  {
+    "name": "redflags_no_purity_claim_purity_method_not_applicable",
+    "type": "redflags",
+    "coa": { "purity_pct": null, "method": null }
+  },
+  { "name": "redflags_missing_net_content", "type": "redflags", "coa": { "net_content_pct": null } },
+  { "name": "redflags_net_content_over_100", "type": "redflags", "coa": { "net_content_pct": 104.0 } },
+  { "name": "redflags_net_content_zero", "type": "redflags", "coa": { "net_content_pct": 0.0 } },
+  { "name": "redflags_net_content_negative", "type": "redflags", "coa": { "net_content_pct": -1.0 } },
+  { "name": "redflags_net_content_at_100", "type": "redflags", "coa": { "net_content_pct": 100.0 } }
+]
