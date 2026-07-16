@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>coacheck - what's read, and why</title>
+<style>
+  body {
+    margin: 0; padding: 24px; max-width: 560px; background: #101418; color: #dde4ea;
+    font: 14px/1.6 ui-sans-serif, system-ui, sans-serif;
+  }
+  h1 { font-size: 17px; }
+  h2 { font-size: 13px; color: #8b98a5; text-transform: uppercase; letter-spacing: .04em; margin-top: 24px; }
+  code { color: #4cc38a; }
+  .policy { color: #8b98a5; font-size: 12.5px; border-top: 1px solid #2a323c; margin-top: 24px; padding-top: 12px; }
+</style>
+</head>
+<body>
+<h1>coacheck</h1>
+<p>Reads a Certificate of Analysis (COA) - the lab report that ships with a research
+peptide vial - straight off your screen, and computes the purity/reconstitution math and a
+red-flag checklist on it. Nothing here judges whether to use anything; it does the math on
+what you give it.</p>
+
+<h2>What it reads, and what it doesn't</h2>
+<p>Only the on-screen rectangle you drag, on the one tab you're on, when you ask for it -
+nothing runs on any page until you click the toolbar icon or press the keyboard shortcut.
+OCR (Tesseract.js, bundled with this extension) runs entirely on your machine. There's no
+server component, no analytics, and no network request this extension ever makes - every
+file it uses (the OCR engine, the language model, the code that parses COA fields) ships
+inside the extension package.</p>
+
+<h2>Permissions, and why</h2>
+<ul>
+<li><code>activeTab</code> - lets the toolbar click or keyboard shortcut capture a screenshot
+of the current tab, for the one tab and the one moment you invoked it. Not a standing grant.</li>
+<li><code>scripting</code> - injects the region-select box and the results panel into the
+page you're on, only when you trigger it.</li>
+<li><code>offscreen</code> (Chrome only) - Chrome's service worker background has no
+document, so OCR runs in a hidden offscreen page instead. Firefox doesn't need this; its
+background page already has one.</li>
+</ul>
+<p>No <code>host_permissions</code>, no <code>tabs</code>, no <code>storage</code>. This
+extension keeps no settings and remembers nothing between uses.</p>
+
+<div class="policy">
+Informational tool only - not medical advice, and it does not endorse, recommend, or source
+any compound. It checks a document for missing or implausible data; it can't tell you
+whether the document itself is genuine.
+</div>
+</body>
+</html>

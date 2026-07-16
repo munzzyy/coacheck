@@ -1,0 +1,47 @@
+{
+  "manifest_version": 3,
+  "name": "coacheck",
+  "version": "0.1.0",
+  "description": "Drag-select a Certificate of Analysis on any page, OCR it locally, and get the purity math, reconstitution math, and red-flag checklist. Nothing leaves your machine.",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "coacheck — select a COA region",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js",
+    "scripts": ["background.js"],
+    "type": "module"
+  },
+  "permissions": ["activeTab", "scripting", "offscreen"],
+  "commands": {
+    "select-region": {
+      "suggested_key": { "default": "Alt+Shift+A" },
+      "description": "Select a COA region on the page and read it"
+    }
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "coacheck@munzzyy.local",
+      "strict_min_version": "140.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    },
+    "gecko_android": {
+      "strict_min_version": "142.0"
+    }
+  }
+}

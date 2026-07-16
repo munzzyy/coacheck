@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    --bg: #101418; --panel: #1a2027; --line: #2a323c; --text: #dde4ea;
+    --dim: #8b98a5; --accent: #4cc38a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; width: 380px; background: var(--bg); color: var(--text);
+    font: 13px/1.45 ui-sans-serif, system-ui, sans-serif;
+  }
+  header {
+    padding: 10px 12px; border-bottom: 1px solid var(--line);
+  }
+  header b { font-size: 15px; }
+  header .policy { color: var(--dim); font-size: 10.5px; margin-top: 2px; }
+  main { padding: 12px; }
+  button.go {
+    width: 100%; background: var(--accent); color: #0b271b; font-weight: 700;
+    border: 0; border-radius: 8px; padding: 10px; font-size: 14px; cursor: pointer;
+  }
+  .hint { color: var(--dim); font-size: 11px; margin-top: 6px; }
+  .divider {
+    display: flex; align-items: center; gap: 8px; color: var(--dim); font-size: 11px;
+    margin: 14px 0;
+  }
+  .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  textarea {
+    width: 100%; min-height: 90px; background: var(--panel); border: 1px solid var(--line);
+    color: var(--text); border-radius: 8px; padding: 8px; font: 12px/1.5 ui-monospace, monospace;
+    resize: vertical;
+  }
+  button.secondary {
+    width: 100%; margin-top: 8px; background: var(--panel); color: var(--text);
+    border: 1px solid var(--line); border-radius: 8px; padding: 8px; font-size: 13px; cursor: pointer;
+  }
+  #result { margin-top: 12px; }
+  #err { color: #e06c75; font-size: 12px; margin-top: 8px; white-space: pre-wrap; }
+  footer {
+    display: flex; justify-content: space-between; padding: 8px 12px;
+    border-top: 1px solid var(--line); font-size: 11px;
+  }
+  footer a { color: var(--dim); text-decoration: none; cursor: pointer; }
+  footer a:hover { color: var(--accent); }
+</style>
+</head>
+<body>
+  <header>
+    <b>coacheck</b>
+    <div class="policy">Informational only - not medical advice. Doesn't endorse, recommend, or source any compound.</div>
+  </header>
+  <main>
+    <button class="go" id="select">select a COA region on this page</button>
+    <div class="hint">drag a box over the COA, then esc to cancel or click the ✕ when you're done</div>
+
+    <div class="divider">or paste the text directly</div>
+    <textarea id="text" placeholder="paste the COA text here"></textarea>
+    <button class="secondary" id="analyze">analyze pasted text</button>
+
+    <div id="result"></div>
+    <div id="err"></div>
+  </main>
+  <footer>
+    <a href="../about/about.html" target="_blank" rel="noopener">what's read / permissions</a>
+  </footer>
+  <script src="../shared/render-dom.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

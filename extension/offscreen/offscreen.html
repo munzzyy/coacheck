@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>coacheck offscreen OCR host</title>
+</head>
+<body>
+<!--
+  Chrome-only. This page is never shown to a user - it exists purely to give the OCR
+  worker a real document/Worker context, since the MV3 service worker in background.js
+  doesn't have one. See offscreen.js and ocr/recognize.js.
+-->
+<script type="module" src="offscreen.js"></script>
+</body>
+</html>
