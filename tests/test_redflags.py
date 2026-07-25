@@ -67,6 +67,29 @@ class PurityCheck(unittest.TestCase):
         flag = _flags_by_id(coa)["CC-PURITY"]
         self.assertEqual(flag.status, Status.PASS)
 
+    def test_upper_bound_qualifier_warns_even_above_threshold(self):
+        # "<99%" is an upper bound: purity could be anything below 99, so a
+        # value that would otherwise PASS must not.
+        for qualifier in ("<", "<=", "≤"):
+            with self.subTest(qualifier=qualifier):
+                coa = ParsedCoa(purity_pct=99.0, purity_qualifier=qualifier)
+                flag = _flags_by_id(coa)["CC-PURITY"]
+                self.assertEqual(flag.status, Status.WARN)
+                self.assertIn("upper bound", flag.detail)
+
+    def test_lower_bound_qualifier_still_passes(self):
+        # ">=98%" is conservative; it stays a PASS.
+        coa = ParsedCoa(purity_pct=99.0, purity_qualifier=">=")
+        flag = _flags_by_id(coa)["CC-PURITY"]
+        self.assertEqual(flag.status, Status.PASS)
+
+    def test_impossible_purity_detail_uses_g_format(self):
+        # 1e6 is impossible; the detail renders it in %g form ("1e+06"), which
+        # the JS port's formatG has to match byte for byte.
+        flag = _flags_by_id(ParsedCoa(purity_pct=1_000_000.0))["CC-PURITY"]
+        self.assertEqual(flag.status, Status.FAIL)
+        self.assertIn("1e+06", flag.detail)
+
 
 class BatchCheck(unittest.TestCase):
     def test_missing_batch_is_warn(self):
@@ -89,9 +112,27 @@ class LabCheck(unittest.TestCase):
                 flag = _flags_by_id(ParsedCoa(lab_name=placeholder))["CC-LAB"]
                 self.assertEqual(flag.status, Status.WARN)
 
+    def test_placeholder_variants_that_used_to_slip_through_are_warn(self):
+        # Exact-string membership let a stray word or dot defeat the check;
+        # these all normalize to a known placeholder now.
+        for placeholder in ("TBD", "N.A.", "-", "--", "Not disclosed",
+                            "In-House Lab", "n/a", "Internal Laboratory"):
+            with self.subTest(placeholder=placeholder):
+                flag = _flags_by_id(ParsedCoa(lab_name=placeholder))["CC-LAB"]
+                self.assertEqual(flag.status, Status.WARN)
+
     def test_named_lab_is_pass(self):
         flag = _flags_by_id(ParsedCoa(lab_name="Example Labs Inc."))["CC-LAB"]
         self.assertEqual(flag.status, Status.PASS)
+
+    def test_real_lab_name_containing_a_stem_word_still_passes(self):
+        # A real name that happens to include a placeholder stem must not be
+        # flagged - "Private Analytics" keeps its distinguishing word.
+        for name in ("Private Analytics", "Internal Standards Lab",
+                    "Meridian Analytical Labs"):
+            with self.subTest(name=name):
+                flag = _flags_by_id(ParsedCoa(lab_name=name))["CC-LAB"]
+                self.assertEqual(flag.status, Status.PASS)
 
 
 class MethodCheck(unittest.TestCase):

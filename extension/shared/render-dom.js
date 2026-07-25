@@ -30,8 +30,16 @@
   // script and can't `import` the engine's ES modules.
   function formatG(value) {
     if (!Number.isFinite(value)) return String(value);
-    let s = value.toPrecision(6);
-    if (s.includes("e") || s.includes("E")) return Number(s).toString();
+    if (value === 0) return "0";
+    const precision = 6;
+    const [mantissa, expPart] = value.toExponential(precision - 1).split("e");
+    const exp = parseInt(expPart, 10);
+    if (exp < -4 || exp >= precision) {
+      const trimmed = mantissa.replace(/\.?0+$/, "");
+      const sign = exp < 0 ? "-" : "+";
+      return `${trimmed}e${sign}${String(Math.abs(exp)).padStart(2, "0")}`;
+    }
+    let s = value.toFixed(Math.max(0, precision - 1 - exp));
     if (s.includes(".")) s = s.replace(/0+$/, "").replace(/\.$/, "");
     return s;
   }
@@ -39,7 +47,10 @@
   function fieldText(coa, name) {
     const value = coa[name];
     if (value === null || value === undefined) return "(not found)";
-    if (name === "purity_pct" || name === "net_content_pct") return `${formatG(value)}%`;
+    if (name === "purity_pct" || name === "net_content_pct") {
+      const qualifier = name === "purity_pct" ? coa.purity_qualifier : coa.net_content_qualifier;
+      return `${qualifier || ""}${formatG(value)}%`;
+    }
     if (name === "mass_mg") return `${formatG(value)} mg`;
     return String(value);
   }

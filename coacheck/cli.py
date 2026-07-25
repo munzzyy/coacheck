@@ -34,7 +34,9 @@ def _read_coa_text(path: str | None) -> str:
             data = f.read(MAX_INPUT_BYTES + 1)
     if len(data) > MAX_INPUT_BYTES:
         raise ValueError(f"input is too large to read (max {MAX_INPUT_BYTES} bytes)")
-    return data.decode("utf-8", errors="replace")
+    # utf-8-sig strips a leading BOM (which some exporters emit) that would
+    # otherwise cling to the first line and stop it matching a label.
+    return data.decode("utf-8-sig", errors="replace")
 
 
 def cmd_parse(args: argparse.Namespace) -> int:

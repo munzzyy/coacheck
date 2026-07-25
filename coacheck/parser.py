@@ -15,6 +15,7 @@ redflags.py for the arithmetic and the checklist built on top of it.
 
 from __future__ import annotations
 
+import math
 import re
 from dataclasses import dataclass
 from typing import Optional
@@ -25,14 +26,21 @@ from typing import Optional
 MAX_COA_TEXT_CHARS = 100_000
 
 # Optional qualifier some COAs put in front of a percentage ("Purity: >=98%").
-# Stripped and ignored; the number itself is what gets reported.
-_QUALIFIER = r"(?:>=|<=|~|>|<|≥|≤)?\s*"
+# Captured so the checklist can tell a confirmed value from a bound: "<98%" is
+# an upper bound, not a claim that purity is 98%.
+_QUALIFIER = r"(?:(>=|<=|~|>|<|≥|≤)\s*)?"
 
 # A decimal number, accepting either a dot or a comma as the separator -
 # COAs from outside the US/UK commonly write "98,99%" rather than "98.99%".
-# _first_float_match normalizes the comma before calling float() on it.
-_DECIMAL_VALUE = r"(\d+(?:[.,]\d+)?)"
+# ASCII digits only, on purpose: the JS port's \d is ASCII, so pinning Python
+# to [0-9] keeps the two engines matching on non-ASCII digit input.
+# _to_float sorts out comma-as-decimal vs comma-as-thousands-separator.
+_DECIMAL_VALUE = r"([0-9]+(?:[.,][0-9]+)?)"
 _PCT_VALUE = _QUALIFIER + _DECIMAL_VALUE + r"\s*%?"
+
+# A number written with commas as thousands separators ("1,000", "5,000").
+# Told apart from a comma decimal ("98,99") so "1,000 mg" isn't read as 1 mg.
+_THOUSANDS_GROUPED = re.compile(r"^[0-9]{1,3}(?:,[0-9]{3})+$")
 
 
 _PRODUCT_PATTERNS = [
@@ -43,18 +51,22 @@ _PRODUCT_PATTERNS = [
     re.compile(r"^item\s*name\s*[:\-]\s*(.+)$", re.IGNORECASE),
 ]
 
+# The trailing whitespace is pulled inside the optional group (e.g.
+# "(?:\([^)]*\)\s*)?" rather than "(?:\([^)]*\))?\s*") so there are never two
+# free-floating \s* runs on either side of an empty-matchable group - that
+# adjacency is what makes the scan quadratic on a long run of whitespace.
 _PURITY_PATTERNS = [
     re.compile(
-        r"^(?:hplc\s+)?purity\s*(?:\([^)]*\))?\s*[:\-]\s*" + _PCT_VALUE, re.IGNORECASE
+        r"^(?:hplc\s+)?purity\s*(?:\([^)]*\)\s*)?[:\-]\s*" + _PCT_VALUE, re.IGNORECASE
     ),
 ]
 
 _NET_CONTENT_PATTERNS = [
     re.compile(
-        r"^net\s*peptide\s*content\s*(?:\([^)]*\))?\s*[:\-]\s*" + _PCT_VALUE, re.IGNORECASE
+        r"^net\s*peptide\s*content\s*(?:\([^)]*\)\s*)?[:\-]\s*" + _PCT_VALUE, re.IGNORECASE
     ),
-    re.compile(r"^net\s*content\s*(?:\([^)]*\))?\s*[:\-]\s*" + _PCT_VALUE, re.IGNORECASE),
-    re.compile(r"^peptide\s*content\s*(?:\([^)]*\))?\s*[:\-]\s*" + _PCT_VALUE, re.IGNORECASE),
+    re.compile(r"^net\s*content\s*(?:\([^)]*\)\s*)?[:\-]\s*" + _PCT_VALUE, re.IGNORECASE),
+    re.compile(r"^peptide\s*content\s*(?:\([^)]*\)\s*)?[:\-]\s*" + _PCT_VALUE, re.IGNORECASE),
 ]
 
 _MASS_PATTERNS = [
@@ -66,9 +78,9 @@ _MASS_PATTERNS = [
 ]
 
 _BATCH_PATTERNS = [
-    re.compile(r"^batch\s*/\s*lot\s*(?:no\.?|number)?\s*[:\-]\s*(\S+)", re.IGNORECASE),
-    re.compile(r"^batch\s*(?:no\.?|number)?\s*[:\-]\s*(\S+)", re.IGNORECASE),
-    re.compile(r"^lot\s*(?:no\.?|number)?\s*[:\-]\s*(\S+)", re.IGNORECASE),
+    re.compile(r"^batch\s*/\s*lot\s*(?:(?:no\.?|number)\s*)?[:\-]\s*(\S+)", re.IGNORECASE),
+    re.compile(r"^batch\s*(?:(?:no\.?|number)\s*)?[:\-]\s*(\S+)", re.IGNORECASE),
+    re.compile(r"^lot\s*(?:(?:no\.?|number)\s*)?[:\-]\s*(\S+)", re.IGNORECASE),
 ]
 
 _DATE_PATTERNS = [
@@ -110,7 +122,9 @@ class ParsedCoa:
 
     product_name: Optional[str] = None
     purity_pct: Optional[float] = None
+    purity_qualifier: Optional[str] = None
     net_content_pct: Optional[float] = None
+    net_content_qualifier: Optional[str] = None
     mass_mg: Optional[float] = None
     batch_lot: Optional[str] = None
     test_date: Optional[str] = None
@@ -132,6 +146,27 @@ def _first_text_match(lines: list[str], patterns: list[re.Pattern]) -> Optional[
     return None
 
 
+def _to_float(token: str) -> Optional[float]:
+    """Parse a captured numeric token to a float, or None if it isn't usable.
+
+    Commas are read as thousands separators when the token is grouped like
+    "1,000" and as a decimal point otherwise ("98,99"). A token that overflows
+    to infinity (an absurdly long run of digits) returns None rather than a
+    non-finite float the rest of the pipeline can't use or serialize.
+    """
+    if _THOUSANDS_GROUPED.match(token):
+        normalized = token.replace(",", "")
+    else:
+        normalized = token.replace(",", ".")
+    try:
+        value = float(normalized)
+    except ValueError:
+        return None
+    if not math.isfinite(value):
+        return None
+    return value
+
+
 def _first_float_match(lines: list[str], patterns: list[re.Pattern]) -> Optional[float]:
     for line in lines:
         stripped = line.strip()
@@ -140,11 +175,29 @@ def _first_float_match(lines: list[str], patterns: list[re.Pattern]) -> Optional
         for pattern in patterns:
             m = pattern.match(stripped)
             if m:
-                try:
-                    return float(m.group(1).replace(",", "."))
-                except ValueError:
-                    continue
+                value = _to_float(m.group(1))
+                if value is not None:
+                    return value
     return None
+
+
+def _first_pct_match(
+    lines: list[str], patterns: list[re.Pattern]
+) -> tuple[Optional[float], Optional[str]]:
+    """Like _first_float_match, but for a percentage that may carry a leading
+    qualifier ("<98.5%", ">=99%"). Returns (value, qualifier); the qualifier is
+    None when none was written."""
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            continue
+        for pattern in patterns:
+            m = pattern.match(stripped)
+            if m:
+                value = _to_float(m.group(2))
+                if value is not None:
+                    return value, m.group(1)
+    return None, None
 
 
 def parse_coa(text: str) -> ParsedCoa:
@@ -168,11 +221,21 @@ def parse_coa(text: str) -> ParsedCoa:
             f"max {MAX_COA_TEXT_CHARS})"
         )
 
+    # A leading UTF-8 BOM (U+FEFF) isn't whitespace and survives str.strip(),
+    # so it would keep the first line from matching a label. Drop it here so
+    # library callers and the stdin path get the same treatment the CLI's
+    # utf-8-sig decode gives a file.
+    text = text.lstrip("\ufeff")
+
     lines = text.splitlines()
+    purity_pct, purity_qualifier = _first_pct_match(lines, _PURITY_PATTERNS)
+    net_content_pct, net_content_qualifier = _first_pct_match(lines, _NET_CONTENT_PATTERNS)
     return ParsedCoa(
         product_name=_first_text_match(lines, _PRODUCT_PATTERNS),
-        purity_pct=_first_float_match(lines, _PURITY_PATTERNS),
-        net_content_pct=_first_float_match(lines, _NET_CONTENT_PATTERNS),
+        purity_pct=purity_pct,
+        purity_qualifier=purity_qualifier,
+        net_content_pct=net_content_pct,
+        net_content_qualifier=net_content_qualifier,
         mass_mg=_first_float_match(lines, _MASS_PATTERNS),
         batch_lot=_first_text_match(lines, _BATCH_PATTERNS),
         test_date=_first_text_match(lines, _DATE_PATTERNS),

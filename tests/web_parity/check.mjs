@@ -30,8 +30,9 @@ const { runChecklist } = await import(path.join(ENGINE_DIR, "redflags.js"));
 // redflags case's partial `coa` object in cases.json fills in the rest the same way
 // `ParsedCoa(**case["coa"])` does on the Python side.
 const PARSED_COA_DEFAULTS = {
-  product_name: null, purity_pct: null, net_content_pct: null, mass_mg: null,
-  batch_lot: null, test_date: null, method: null, lab_name: null,
+  product_name: null, purity_pct: null, purity_qualifier: null, net_content_pct: null,
+  net_content_qualifier: null, mass_mg: null, batch_lot: null, test_date: null,
+  method: null, lab_name: null,
 };
 
 function runParseCase(c) {

@@ -21,15 +21,26 @@
 // only to stop pathological input (e.g. OCR runaway output) from making the regex scan slow.
 export const MAX_COA_TEXT_CHARS = 100_000;
 
-// Optional qualifier some COAs put in front of a percentage ("Purity: >=98%"). Stripped
-// and ignored; the number itself is what gets reported.
-const QUALIFIER = "(?:>=|<=|~|>|<|≥|≤)?\\s*";
+// Optional qualifier some COAs put in front of a percentage ("Purity: >=98%"). Captured so
+// the checklist can tell a confirmed value from a bound: "<98%" is an upper bound, not a
+// claim that purity is 98%.
+const QUALIFIER = "(?:(>=|<=|~|>|<|≥|≤)\\s*)?";
 
 // A decimal number, accepting either a dot or a comma as the separator - COAs from outside
-// the US/UK commonly write "98,99%" rather than "98.99%". firstFloatMatch normalizes the
-// comma before calling Number() on it.
+// the US/UK commonly write "98,99%" rather than "98.99%". \d is ASCII here, which the Python
+// port matches ([0-9]) so non-ASCII digits behave the same in both. toFloat sorts out
+// comma-as-decimal vs comma-as-thousands-separator.
 const DECIMAL_VALUE = "(\\d+(?:[.,]\\d+)?)";
 const PCT_VALUE = `${QUALIFIER}${DECIMAL_VALUE}\\s*%?`;
+
+// A number written with commas as thousands separators ("1,000", "5,000"). Told apart from a
+// comma decimal ("98,99") so "1,000 mg" isn't read as 1 mg.
+const THOUSANDS_GROUPED = /^\d{1,3}(?:,\d{3})+$/;
+
+// Python's str.splitlines() breaks on more than \r\n/\r/\n - vertical tab, form feed, the
+// file/group/record separators, NEL, and the Unicode line/paragraph separators too. Match
+// that set so the same bytes split into the same lines in both engines.
+const LINE_SPLIT = /\r\n|[\n\r\x0b\x0c\x1c\x1d\x1e\x85\u2028\u2029]/;
 
 const PRODUCT_PATTERNS = [
   /^product\s*name\s*[:-]\s*(.+)$/i,
@@ -39,14 +50,18 @@ const PRODUCT_PATTERNS = [
   /^item\s*name\s*[:-]\s*(.+)$/i,
 ];
 
+// The trailing whitespace is pulled inside the optional group ("(?:\(...\)\s*)?" rather than
+// "(?:\(...\))?\s*") so there are never two free-floating \s* runs on either side of an
+// empty-matchable group - that adjacency is what makes the scan quadratic on a long run of
+// whitespace.
 const PURITY_PATTERNS = [
-  new RegExp(`^(?:hplc\\s+)?purity\\s*(?:\\([^)]*\\))?\\s*[:-]\\s*${PCT_VALUE}`, "i"),
+  new RegExp(`^(?:hplc\\s+)?purity\\s*(?:\\([^)]*\\)\\s*)?[:-]\\s*${PCT_VALUE}`, "i"),
 ];
 
 const NET_CONTENT_PATTERNS = [
-  new RegExp(`^net\\s*peptide\\s*content\\s*(?:\\([^)]*\\))?\\s*[:-]\\s*${PCT_VALUE}`, "i"),
-  new RegExp(`^net\\s*content\\s*(?:\\([^)]*\\))?\\s*[:-]\\s*${PCT_VALUE}`, "i"),
-  new RegExp(`^peptide\\s*content\\s*(?:\\([^)]*\\))?\\s*[:-]\\s*${PCT_VALUE}`, "i"),
+  new RegExp(`^net\\s*peptide\\s*content\\s*(?:\\([^)]*\\)\\s*)?[:-]\\s*${PCT_VALUE}`, "i"),
+  new RegExp(`^net\\s*content\\s*(?:\\([^)]*\\)\\s*)?[:-]\\s*${PCT_VALUE}`, "i"),
+  new RegExp(`^peptide\\s*content\\s*(?:\\([^)]*\\)\\s*)?[:-]\\s*${PCT_VALUE}`, "i"),
 ];
 
 const MASS_PATTERNS = [
@@ -58,9 +73,9 @@ const MASS_PATTERNS = [
 ];
 
 const BATCH_PATTERNS = [
-  /^batch\s*\/\s*lot\s*(?:no\.?|number)?\s*[:-]\s*(\S+)/i,
-  /^batch\s*(?:no\.?|number)?\s*[:-]\s*(\S+)/i,
-  /^lot\s*(?:no\.?|number)?\s*[:-]\s*(\S+)/i,
+  /^batch\s*\/\s*lot\s*(?:(?:no\.?|number)\s*)?[:-]\s*(\S+)/i,
+  /^batch\s*(?:(?:no\.?|number)\s*)?[:-]\s*(\S+)/i,
+  /^lot\s*(?:(?:no\.?|number)\s*)?[:-]\s*(\S+)/i,
 ];
 
 const DATE_PATTERNS = [
@@ -105,6 +120,18 @@ function firstTextMatch(lines, patterns) {
   return null;
 }
 
+// Parse a captured numeric token to a number, or null if it isn't usable. Commas are read as
+// thousands separators when the token is grouped like "1,000" and as a decimal point
+// otherwise ("98,99"). A token that overflows to Infinity (an absurdly long digit run) is
+// dropped rather than passed on as a non-finite number.
+function toFloat(token) {
+  const normalized = THOUSANDS_GROUPED.test(token)
+    ? token.replaceAll(",", "")
+    : token.replace(",", ".");
+  const value = Number(normalized);
+  return Number.isFinite(value) ? value : null;
+}
+
 function firstFloatMatch(lines, patterns) {
   for (const line of lines) {
     const stripped = line.trim();
@@ -112,12 +139,29 @@ function firstFloatMatch(lines, patterns) {
     for (const pattern of patterns) {
       const m = pattern.exec(stripped);
       if (m) {
-        const value = Number(m[1].replace(",", "."));
-        if (!Number.isNaN(value)) return value;
+        const value = toFloat(m[1]);
+        if (value !== null) return value;
       }
     }
   }
   return null;
+}
+
+// Like firstFloatMatch, but for a percentage that may carry a leading qualifier ("<98.5%",
+// ">=99%"). Returns [value, qualifier]; qualifier is null when none was written.
+function firstPctMatch(lines, patterns) {
+  for (const line of lines) {
+    const stripped = line.trim();
+    if (!stripped) continue;
+    for (const pattern of patterns) {
+      const m = pattern.exec(stripped);
+      if (m) {
+        const value = toFloat(m[2]);
+        if (value !== null) return [value, m[1] ?? null];
+      }
+    }
+  }
+  return [null, null];
 }
 
 /**
@@ -145,11 +189,18 @@ export function parseCoa(text) {
     );
   }
 
-  const lines = text.split(/\r\n|\r|\n/);
+  // A leading UTF-8 BOM (U+FEFF) would cling to the first line and stop it matching a label.
+  // Python's parse_coa lstrips it too; drop it here so the two engines agree on BOM'd input.
+  const cleaned = text.replace(/^\ufeff+/, "");
+  const lines = cleaned.split(LINE_SPLIT);
+  const [purityPct, purityQualifier] = firstPctMatch(lines, PURITY_PATTERNS);
+  const [netContentPct, netContentQualifier] = firstPctMatch(lines, NET_CONTENT_PATTERNS);
   return {
     product_name: firstTextMatch(lines, PRODUCT_PATTERNS),
-    purity_pct: firstFloatMatch(lines, PURITY_PATTERNS),
-    net_content_pct: firstFloatMatch(lines, NET_CONTENT_PATTERNS),
+    purity_pct: purityPct,
+    purity_qualifier: purityQualifier,
+    net_content_pct: netContentPct,
+    net_content_qualifier: netContentQualifier,
     mass_mg: firstFloatMatch(lines, MASS_PATTERNS),
     batch_lot: firstTextMatch(lines, BATCH_PATTERNS),
     test_date: firstTextMatch(lines, DATE_PATTERNS),

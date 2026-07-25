@@ -1,5 +1,6 @@
 """Tests for coacheck.parser: field extraction from a COA text blob."""
 
+import time
 import unittest
 
 from coacheck.parser import MAX_COA_TEXT_CHARS, ParsedCoa, parse_coa
@@ -163,6 +164,124 @@ class DecimalSeparatorVariants(unittest.TestCase):
         self.assertEqual(coa.mass_mg, 5.0)
         self.assertEqual(coa.purity_pct, 98.99)
         self.assertEqual(coa.net_content_pct, 89.99)
+
+
+class ThousandsSeparator(unittest.TestCase):
+    """A comma grouping thousands ("1,000 mg") must not be read as a decimal
+    comma, which used to silently divide a labeled mass by 1000."""
+
+    def test_thousands_grouped_mass_is_not_divided(self):
+        self.assertEqual(parse_coa("Quantity: 1,000 mg\n").mass_mg, 1000.0)
+
+    def test_five_thousand_grouped_mass(self):
+        self.assertEqual(parse_coa("Net Weight: 5,000 mg\n").mass_mg, 5000.0)
+
+    def test_comma_decimal_still_reads_as_decimal(self):
+        # Two digits after the comma is a decimal, not a thousands group.
+        self.assertEqual(parse_coa("Purity: 98,99%\n").purity_pct, 98.99)
+
+
+class PurityQualifier(unittest.TestCase):
+    """A leading qualifier ("<98.5%") is captured, not silently dropped, so the
+    checklist can tell an upper bound from a confirmed value."""
+
+    def test_less_than_qualifier_captured(self):
+        coa = parse_coa("Purity: <98.5%\n")
+        self.assertEqual(coa.purity_pct, 98.5)
+        self.assertEqual(coa.purity_qualifier, "<")
+
+    def test_less_equal_qualifier_captured(self):
+        coa = parse_coa("Purity: <=97%\n")
+        self.assertEqual(coa.purity_qualifier, "<=")
+
+    def test_greater_equal_qualifier_captured(self):
+        self.assertEqual(parse_coa("Purity: >=98%\n").purity_qualifier, ">=")
+
+    def test_no_qualifier_is_none(self):
+        self.assertIsNone(parse_coa("Purity: 99%\n").purity_qualifier)
+
+    def test_net_content_qualifier_captured(self):
+        coa = parse_coa("Net Content: <90%\n")
+        self.assertEqual(coa.net_content_pct, 90.0)
+        self.assertEqual(coa.net_content_qualifier, "<")
+
+
+class LineSeparatorVariants(unittest.TestCase):
+    """str.splitlines() splits on more than \\n; the parser must find fields
+    across all of them so it agrees with the JS port on the same bytes."""
+
+    def _doc(self, sep):
+        return f"Product Name: RC-118{sep}Purity: 92%{sep}Net Weight: 5 mg{sep}"
+
+    def test_vertical_tab_separator(self):
+        coa = parse_coa(self._doc("\x0b"))
+        self.assertEqual(coa.product_name, "RC-118")
+        self.assertEqual(coa.purity_pct, 92.0)
+
+    def test_nel_separator(self):
+        coa = parse_coa(self._doc("\x85"))
+        self.assertEqual(coa.purity_pct, 92.0)
+
+    def test_unicode_line_separator(self):
+        coa = parse_coa(self._doc("\u2028"))
+        self.assertEqual(coa.purity_pct, 92.0)
+
+
+class AsciiDigitsOnly(unittest.TestCase):
+    """Numeric matching is pinned to ASCII digits so a non-ASCII digit can't
+    produce a value the JS port (whose \\d is ASCII) would miss."""
+
+    def test_fullwidth_digits_not_parsed(self):
+        self.assertIsNone(parse_coa("Purity: ９２．０%\n").purity_pct)
+
+
+class NonFiniteToken(unittest.TestCase):
+    """A digit run long enough to overflow float() to infinity is dropped, so
+    it never reaches the checklist or JSON as a non-finite value."""
+
+    def test_absurdly_long_number_is_dropped(self):
+        coa = parse_coa("Purity: " + ("9" * 320) + "%\nNet Weight: 5 mg\n")
+        self.assertIsNone(coa.purity_pct)
+        self.assertEqual(coa.mass_mg, 5.0)
+
+
+class ByteOrderMark(unittest.TestCase):
+    """A leading UTF-8 BOM survives str.strip() and would otherwise stop the
+    first line from matching a label."""
+
+    def test_bom_prefixed_first_field_is_found(self):
+        coa = parse_coa("\ufeffPurity: 99.5%\n")
+        self.assertEqual(coa.purity_pct, 99.5)
+
+    def test_bom_fixture_parses(self):
+        coa = parse_coa(fixture_text("coa_bom.txt"))
+        self.assertEqual(coa.product_name, "BOM Test BT-1")
+        self.assertEqual(coa.purity_pct, 99.5)
+
+
+class PathologicalWhitespace(unittest.TestCase):
+    """The label patterns must not backtrack quadratically on a long run of
+    whitespace after a label - the input cap is supposed to bound parse time."""
+
+    def test_long_whitespace_run_parses_quickly(self):
+        text = "purity" + (" " * (MAX_COA_TEXT_CHARS - 7)) + "x"
+        start = time.perf_counter()
+        parse_coa(text)
+        elapsed = time.perf_counter() - start
+        # ~0.004s after the fix; ~67s before it. The budget only fails on the
+        # quadratic blowup, never on a slow-but-linear machine.
+        self.assertLess(elapsed, 5.0)
+
+    def test_long_whitespace_after_colon_parses_quickly(self):
+        # The value side (after "purity:") is a separate pattern from the label
+        # side above. A colon plus a long whitespace run then a non-digit used
+        # to still backtrack quadratically because the qualifier group left two
+        # adjacent \s* runs. Keep a colon-present case so that path stays bounded.
+        text = "purity:" + (" " * (MAX_COA_TEXT_CHARS - 8)) + "x"
+        start = time.perf_counter()
+        parse_coa(text)
+        elapsed = time.perf_counter() - start
+        self.assertLess(elapsed, 5.0)
 
 
 class Robustness(unittest.TestCase):

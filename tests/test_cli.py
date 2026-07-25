@@ -59,6 +59,23 @@ class ParseCommand(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertIn("[FAIL] CC-NET", out)
 
+    def test_bom_prefixed_file_is_decoded(self):
+        # The CLI decodes with utf-8-sig, so a leading BOM doesn't swallow the
+        # first field into a "not found".
+        code, out, _err = _run(["parse", fixture_path("coa_bom.txt")])
+        self.assertEqual(code, 0)
+        self.assertIn("BOM Test BT-1", out)
+        self.assertIn("99.5%", out)
+
+    def test_absurdly_long_number_json_is_still_valid(self):
+        text = "Purity: " + ("9" * 320) + "%\nNet Weight: 5 mg\n"
+        with mock.patch.object(cli.sys, "stdin") as stdin:
+            stdin.buffer.read.return_value = text.encode("utf-8")
+            code, out, _err = _run(["parse", "--json"])
+        self.assertEqual(code, 0)
+        payload = json.loads(out)  # would raise on a bare Infinity token
+        self.assertIsNone(payload["fields"]["purity_pct"])
+
     def test_oversized_stdin_input_errors_cleanly(self):
         huge = b"x" * (cli.MAX_INPUT_BYTES + 1)
         with mock.patch.object(cli.sys, "stdin") as stdin:

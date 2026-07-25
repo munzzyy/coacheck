@@ -34,6 +34,16 @@
   },
   { "name": "parse_lot_number_variant", "type": "parse", "text": "Lot Number: L-99\n" },
   { "name": "parse_batch_no_variant", "type": "parse", "text": "Batch No: B-12\n" },
+  { "name": "parse_thousands_separator_mass", "type": "parse", "text": "Quantity: 1,000 mg\n" },
+  { "name": "parse_thousands_separator_5000_mass", "type": "parse", "text": "Net Weight: 5,000 mg\n" },
+  { "name": "parse_upper_bound_purity_qualifier", "type": "parse", "text": "Purity: <98.5%\nNet Weight: 5 mg\nTest Method: RP-HPLC\n" },
+  { "name": "parse_less_equal_purity_qualifier", "type": "parse", "text": "Purity: <=97%\n" },
+  { "name": "parse_utf8_bom_prefix", "type": "parse", "text": "\uFEFFPurity: 99.5%\nNet Weight: 5 mg\nTest Method: RP-HPLC\n" },
+  { "name": "parse_vertical_tab_separator", "type": "parse", "text": "Product Name: RC-118\u000bPurity: 92%\u000bNet Weight: 5 mg\u000bTest Method: RP-HPLC\u000b" },
+  { "name": "parse_nel_separator", "type": "parse", "text": "Product Name: RC-118\u0085Purity: 92%\u0085Net Weight: 5 mg\u0085Test Method: RP-HPLC\u0085" },
+  { "name": "parse_line_separator_u2028", "type": "parse", "text": "Product Name: RC-118\u2028Purity: 92%\u2028Net Weight: 5 mg\u2028Test Method: RP-HPLC\u2028" },
+  { "name": "parse_fullwidth_digits_not_parsed", "type": "parse", "text": "Purity: ９２．０%\n" },
+  { "name": "parse_absurdly_long_number_dropped", "type": "parse", "text": "Purity: 99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999%\nNet Weight: 5 mg\n" },
 
   { "name": "purity_basic_no_net_content", "type": "purity", "labeled_mg": 5.0, "purity_pct": 98.0 },
   {
@@ -115,5 +125,17 @@
   { "name": "redflags_net_content_over_100", "type": "redflags", "coa": { "net_content_pct": 104.0 } },
   { "name": "redflags_net_content_zero", "type": "redflags", "coa": { "net_content_pct": 0.0 } },
   { "name": "redflags_net_content_negative", "type": "redflags", "coa": { "net_content_pct": -1.0 } },
-  { "name": "redflags_net_content_at_100", "type": "redflags", "coa": { "net_content_pct": 100.0 } }
+  { "name": "redflags_net_content_at_100", "type": "redflags", "coa": { "net_content_pct": 100.0 } },
+  { "name": "redflags_placeholder_lab_tbd", "type": "redflags", "coa": { "lab_name": "TBD" } },
+  { "name": "redflags_placeholder_lab_na_dots", "type": "redflags", "coa": { "lab_name": "N.A." } },
+  { "name": "redflags_placeholder_lab_dash", "type": "redflags", "coa": { "lab_name": "-" } },
+  { "name": "redflags_placeholder_lab_not_disclosed", "type": "redflags", "coa": { "lab_name": "Not disclosed" } },
+  { "name": "redflags_placeholder_lab_inhouse_lab", "type": "redflags", "coa": { "lab_name": "In-House Lab" } },
+  { "name": "redflags_real_lab_with_stem_word_passes", "type": "redflags", "coa": { "lab_name": "Private Analytics" } },
+  { "name": "redflags_purity_upper_bound_warn", "type": "redflags", "coa": { "purity_pct": 99.0, "purity_qualifier": "<" } },
+  { "name": "redflags_purity_less_equal_upper_bound_warn", "type": "redflags", "coa": { "purity_pct": 97.0, "purity_qualifier": "<=" } },
+  { "name": "redflags_purity_impossible_1e6_formatg", "type": "redflags", "coa": { "purity_pct": 1000000.0 } },
+  { "name": "redflags_purity_tiny_1e-7_formatg", "type": "redflags", "coa": { "purity_pct": 0.0000001 } },
+  { "name": "redflags_net_content_1e6_formatg", "type": "redflags", "coa": { "net_content_pct": 1000000.0 } },
+  { "name": "redflags_purity_1e21_formatg", "type": "redflags", "coa": { "purity_pct": 1e21 } }
 ]

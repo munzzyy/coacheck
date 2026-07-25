@@ -15,11 +15,22 @@
 // claim that material below it is unsafe or fake.
 export const RESEARCH_GRADE_PURITY_THRESHOLD = 98.0;
 
-// Lab-name values that are present but don't actually name a lab.
+// Purity qualifiers that make the stated number an upper bound rather than a confirmed value -
+// "<98%" says purity is below 98, not that it is 98.
+const UPPER_BOUND_QUALIFIERS = new Set(["<", "<=", "≤"]);
+
+// Lab-name values that are present but don't actually name a lab. Matched against the
+// normalized value (see isPlaceholderLab), so "N.A.", "In-House Lab" and the like are caught
+// too, not just the exact strings here.
 const PLACEHOLDER_LAB_VALUES = new Set([
-  "n/a", "na", "none", "in-house", "in house", "internal",
-  "internal lab", "undisclosed", "confidential", "private",
+  "n/a", "na", "n.a.", "none", "in-house", "in house", "inhouse", "internal",
+  "internal lab", "undisclosed", "confidential", "private", "tbd", "unknown",
+  "not disclosed", "not specified", "not provided", "pending", "unavailable",
 ]);
+
+// Generic trailing words a placeholder is often padded with ("In-House Lab", "Internal
+// Laboratory"). Dropped before the placeholder check so the padding doesn't hide it.
+const GENERIC_LAB_WORDS = ["laboratories", "laboratory", "labs", "lab"];
 
 export const Status = Object.freeze({
   PASS: "pass",
@@ -35,13 +46,19 @@ function formatG(value) {
   if (!Number.isFinite(value)) {
     return value > 0 ? "inf" : value < 0 ? "-inf" : "nan";
   }
-  let s = value.toPrecision(6);
-  if (s.includes("e") || s.includes("E")) {
-    return Number(s).toString();
+  if (value === 0) return "0";
+  const precision = 6;
+  // %e form with (precision - 1) fractional digits gives the rounded mantissa and the decimal
+  // exponent %g keys off of.
+  const [mantissa, expPart] = value.toExponential(precision - 1).split("e");
+  const exp = parseInt(expPart, 10);
+  if (exp < -4 || exp >= precision) {
+    const trimmed = mantissa.replace(/\.?0+$/, "");
+    const sign = exp < 0 ? "-" : "+";
+    return `${trimmed}e${sign}${String(Math.abs(exp)).padStart(2, "0")}`;
   }
-  if (s.includes(".")) {
-    s = s.replace(/0+$/, "").replace(/\.$/, "");
-  }
+  let s = value.toFixed(Math.max(0, precision - 1 - exp));
+  if (s.includes(".")) s = s.replace(/0+$/, "").replace(/\.$/, "");
   return s;
 }
 
@@ -61,8 +78,28 @@ function pyRepr(s) {
   return out + quote;
 }
 
+function normalizeLab(value) {
+  const collapsed = value.trim().toLowerCase().replace(/\s+/g, " ");
+  return collapsed.replace(/^[ .]+|[ .]+$/g, "");
+}
+
 function isPlaceholderLab(value) {
-  return PLACEHOLDER_LAB_VALUES.has(value.trim().toLowerCase());
+  const v = normalizeLab(value);
+  if (!v) return true;
+  // No letters or digits at all ("-", "--", ".").
+  if (!/[a-z0-9]/.test(v)) return true;
+  // "n/a", "n.a.", "n a" all collapse to the same non-answer.
+  if (v.replace(/[^a-z0-9]/g, "") === "na") return true;
+  if (PLACEHOLDER_LAB_VALUES.has(v)) return true;
+  // "In-House Lab" -> "in-house"; a real name like "Private Analytics" keeps its
+  // distinguishing word and is left alone.
+  for (const word of GENERIC_LAB_WORDS) {
+    if (v.endsWith(` ${word}`)) {
+      if (PLACEHOLDER_LAB_VALUES.has(v.slice(0, v.length - word.length - 1).trim())) return true;
+      break;
+    }
+  }
+  return false;
 }
 
 function checkPurity(coa) {
@@ -80,6 +117,16 @@ function checkPurity(coa) {
       title: "Stated purity is not physically possible",
       detail: `Purity is stated as ${formatG(coa.purity_pct)}%, which is outside the `
         + "possible 0-100% range.",
+    };
+  }
+  if (UPPER_BOUND_QUALIFIERS.has(coa.purity_qualifier)) {
+    return {
+      id: "CC-PURITY", status: Status.WARN,
+      title: "Purity stated only as an upper bound",
+      detail: `Stated purity is ${coa.purity_qualifier}${formatG(coa.purity_pct)}%, given `
+        + "only as an upper bound rather than a confirmed value, so it can't "
+        + `be checked against the ${formatG(RESEARCH_GRADE_PURITY_THRESHOLD)}% `
+        + "research-grade line.",
     };
   }
   if (coa.purity_pct < RESEARCH_GRADE_PURITY_THRESHOLD) {

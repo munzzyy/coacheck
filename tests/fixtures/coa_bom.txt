@@ -1,0 +1,4 @@
+﻿Product Name: BOM Test BT-1
+Purity: 99.5%
+Net Weight: 5 mg
+Test Method: RP-HPLC

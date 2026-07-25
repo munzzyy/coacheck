@@ -43,6 +43,30 @@ test("parseCoa: comma decimal separator normalizes to a dot", () => {
   assert.equal(parseCoa("Purity: 98,99%\n").purity_pct, 98.99);
 });
 
+test("parseCoa: a thousands-grouped mass is not read as a decimal", () => {
+  assert.equal(parseCoa("Quantity: 1,000 mg\n").mass_mg, 1000.0);
+});
+
+test("parseCoa: a leading BOM does not swallow the first field", () => {
+  assert.equal(parseCoa("\ufeffPurity: 99.5%\n").purity_pct, 99.5);
+});
+
+test("parseCoa: splits on the same separators as Python splitlines", () => {
+  for (const sep of ["\x0b", "\x0c", "\x1c", "\x85", "\u2028", "\u2029"]) {
+    const coa = parseCoa(`Product Name: RC-1${sep}Purity: 92%${sep}`);
+    assert.equal(coa.purity_pct, 92.0, `separator ${sep.codePointAt(0)}`);
+  }
+});
+
+test("parseCoa: a long whitespace run after a label parses quickly", () => {
+  // Guards the MV3 background worker against the quadratic-backtracking freeze.
+  const text = `purity${" ".repeat(MAX_COA_TEXT_CHARS - 7)}x`;
+  const start = performance.now();
+  parseCoa(text);
+  // ~10ms after the fix, ~8s before it; the budget only trips on the blowup.
+  assert.ok(performance.now() - start < 3000);
+});
+
 test("computePurity: purity only, no net content", () => {
   const r = computePurity(5.0, 98.0);
   assert.ok(Math.abs(r.actual_mg - 4.9) < 1e-9);
@@ -99,8 +123,9 @@ test("computeRecon: negative dose throws", () => {
 });
 
 const PARSED_COA_DEFAULTS = {
-  product_name: null, purity_pct: null, net_content_pct: null, mass_mg: null,
-  batch_lot: null, test_date: null, method: null, lab_name: null,
+  product_name: null, purity_pct: null, purity_qualifier: null, net_content_pct: null,
+  net_content_qualifier: null, mass_mg: null, batch_lot: null, test_date: null,
+  method: null, lab_name: null,
 };
 
 function coaWith(overrides) {
@@ -134,6 +159,27 @@ test("runChecklist: placeholder lab values warn, not pass", () => {
   for (const placeholder of ["N/A", "In-house", "internal", "Undisclosed"]) {
     const flags = runChecklist(coaWith({ lab_name: placeholder }));
     assert.equal(flags.find((f) => f.id === "CC-LAB").status, Status.WARN, placeholder);
+  }
+});
+
+test("runChecklist: placeholder variants that used to slip through now warn", () => {
+  for (const placeholder of ["TBD", "N.A.", "-", "Not disclosed", "In-House Lab"]) {
+    const flags = runChecklist(coaWith({ lab_name: placeholder }));
+    assert.equal(flags.find((f) => f.id === "CC-LAB").status, Status.WARN, placeholder);
+  }
+});
+
+test("runChecklist: a real lab name containing a stem word still passes", () => {
+  for (const name of ["Private Analytics", "Internal Standards Lab", "Meridian Analytical Labs"]) {
+    const flags = runChecklist(coaWith({ lab_name: name }));
+    assert.equal(flags.find((f) => f.id === "CC-LAB").status, Status.PASS, name);
+  }
+});
+
+test("runChecklist: an upper-bound purity qualifier warns even above threshold", () => {
+  for (const qualifier of ["<", "<=", "≤"]) {
+    const flags = runChecklist(coaWith({ purity_pct: 99.0, purity_qualifier: qualifier }));
+    assert.equal(flags.find((f) => f.id === "CC-PURITY").status, Status.WARN, qualifier);
   }
 });
 

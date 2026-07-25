@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import enum
 import math
+import re
 from dataclasses import dataclass
 
 from .parser import ParsedCoa
@@ -26,11 +27,23 @@ from .parser import ParsedCoa
 # Change it here if you want to check against a different line.
 RESEARCH_GRADE_PURITY_THRESHOLD = 98.0
 
-# Lab-name values that are present but don't actually name a lab.
+# Purity qualifiers that make the stated number an upper bound rather than a
+# confirmed value - "<98%" says purity is below 98, not that it is 98.
+_UPPER_BOUND_QUALIFIERS = frozenset({"<", "<=", "≤"})
+
+# Lab-name values that are present but don't actually name a lab. Matched
+# against the normalized value (see _is_placeholder_lab), so "N.A.",
+# "In-House Lab" and the like are caught too, not just the exact strings here.
 _PLACEHOLDER_LAB_VALUES = frozenset(
-    {"n/a", "na", "none", "in-house", "in house", "internal",
-     "internal lab", "undisclosed", "confidential", "private"}
+    {"n/a", "na", "n.a.", "none", "in-house", "in house", "inhouse", "internal",
+     "internal lab", "undisclosed", "confidential", "private", "tbd", "unknown",
+     "not disclosed", "not specified", "not provided", "pending", "unavailable"}
 )
+
+# Generic trailing words a placeholder is often padded with ("In-House Lab",
+# "Internal Laboratory"). Dropped before the placeholder check so the padding
+# doesn't hide the placeholder underneath.
+_GENERIC_LAB_WORDS = ("laboratories", "laboratory", "labs", "lab")
 
 
 class Status(str, enum.Enum):
@@ -47,8 +60,31 @@ class Flag:
     detail: str
 
 
+def _normalize_lab(value: str) -> str:
+    v = re.sub(r"\s+", " ", value.strip().lower())
+    return v.strip(" .")
+
+
 def _is_placeholder_lab(value: str) -> bool:
-    return value.strip().lower() in _PLACEHOLDER_LAB_VALUES
+    v = _normalize_lab(value)
+    if not v:
+        return True
+    # No letters or digits at all ("-", "--", ".").
+    if not re.search(r"[a-z0-9]", v):
+        return True
+    # "n/a", "n.a.", "n a" all collapse to the same non-answer.
+    if re.sub(r"[^a-z0-9]", "", v) == "na":
+        return True
+    if v in _PLACEHOLDER_LAB_VALUES:
+        return True
+    # "In-House Lab" -> "in-house"; a real name like "Private Analytics" keeps
+    # its distinguishing word and is left alone.
+    for word in _GENERIC_LAB_WORDS:
+        if v.endswith(" " + word):
+            if v[: -(len(word) + 1)].strip() in _PLACEHOLDER_LAB_VALUES:
+                return True
+            break
+    return False
 
 
 def _check_purity(coa: ParsedCoa) -> Flag:
@@ -65,6 +101,15 @@ def _check_purity(coa: ParsedCoa) -> Flag:
             "Stated purity is not physically possible",
             f"Purity is stated as {coa.purity_pct:g}%, which is outside the "
             "possible 0-100% range.",
+        )
+    if coa.purity_qualifier in _UPPER_BOUND_QUALIFIERS:
+        return Flag(
+            "CC-PURITY", Status.WARN,
+            "Purity stated only as an upper bound",
+            f"Stated purity is {coa.purity_qualifier}{coa.purity_pct:g}%, given "
+            "only as an upper bound rather than a confirmed value, so it can't "
+            f"be checked against the {RESEARCH_GRADE_PURITY_THRESHOLD:g}% "
+            "research-grade line.",
         )
     if coa.purity_pct < RESEARCH_GRADE_PURITY_THRESHOLD:
         return Flag(

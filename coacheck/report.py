@@ -29,7 +29,10 @@ def _field_text(coa: ParsedCoa, name: str) -> str:
     if value is None:
         return "(not found)"
     if name in ("purity_pct", "net_content_pct"):
-        return f"{value:g}%"
+        qualifier = getattr(
+            coa, "purity_qualifier" if name == "purity_pct" else "net_content_qualifier"
+        )
+        return f"{qualifier or ''}{value:g}%"
     if name == "mass_mg":
         return f"{value:g} mg"
     return str(value)
