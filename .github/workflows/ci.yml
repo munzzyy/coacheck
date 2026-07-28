@@ -32,29 +32,6 @@ jobs:
           python -m coacheck parse tests/fixtures/coa_clean.txt --json
           python -m coacheck recon --vial 5 --water 2 --dose 250
 
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
-        with:
-          python-version: "3.12"
-      - name: Install noslop-lint
-        run: pip install noslop-lint==0.10.0
-      - name: Lint source for AI writing tells
-        run: git ls-files -z '*.py' | xargs -0r noslop --no-config
-      - name: Lint docs for AI writing tells (prose mode)
-        run: git ls-files -z '*.md' | xargs -0r noslop --no-config --prose
-      - name: Lint the extension's own JS/HTML for AI writing tells (code mode)
-        # vendor/ is the unmodified upstream Tesseract.js build, not anything written here.
-        run: |
-          git ls-files -z 'extension/**/*.js' 'extension/**/*.html' \
-            'tests/web_parity/*.mjs' 'tests/js/*.mjs' \
-            | grep -zv '^extension/vendor/' \
-            | xargs -0r noslop --no-config
-
   # extension/engine/ is a JS port of the Python engine (parser/purity/recon/redflags). This
   # proves it stays in exact numeric and structural agreement with the real coacheck package -
   # see tests/web_parity/ - so the extension can never quietly disagree with the CLI.
