@@ -216,6 +216,29 @@ class TableLayout(unittest.TestCase):
         # rather than a number can't be read as a purity figure.
         self.assertIsNone(parse_coa("Purity  is  important\n").purity_pct)
 
+    def test_result_and_spec_columns_still_find_the_value(self):
+        # The value is the column right after the label; the spec column after it
+        # is ignored rather than confusing the match.
+        coa = parse_coa("Purity (HPLC)    99.1 %     NLT 98.0 %\nNet Weight       5 mg      -\n")
+        self.assertEqual(coa.purity_pct, 99.1)
+        self.assertEqual(coa.mass_mg, 5.0)
+
+    def test_a_table_header_row_is_not_read_as_data(self):
+        # "Test  Method  Result  Spec" used to come back as a method of "Result",
+        # and CC-METHOD reported PASS on it.
+        coa = parse_coa(
+            "Test            Method      Result      Specification\n"
+            "Purity          RP-HPLC     99.1%       NLT 98.0%\n"
+            "Batch/Lot       B-1\n"
+        )
+        self.assertIsNone(coa.method)
+        self.assertEqual(coa.batch_lot, "B-1")
+
+    def test_a_spelled_out_separator_beats_the_header_guard(self):
+        # The guard only applies to rows glued together from columns. A document
+        # that actually writes "Method: Result" is taken at its word.
+        self.assertEqual(parse_coa("Method: Result\n").method, "Result")
+
     def test_padded_colon_is_still_one_field(self):
         # A gap that touches a separator is padding, not a column boundary.
         self.assertEqual(parse_coa("Purity   :    98.5 %\n").purity_pct, 98.5)

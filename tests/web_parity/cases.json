@@ -60,6 +60,17 @@
   { "name": "parse_tab_column_table", "type": "parse", "text": "Purity (HPLC)\t99.1 %\nNet Weight\t5 mg\n" },
   { "name": "parse_prose_with_double_space_not_a_field", "type": "parse", "text": "Purity  is  important\n" },
   {
+    "name": "parse_table_header_row_is_not_data",
+    "type": "parse",
+    "text": "Test            Method      Result      Specification\nPurity          RP-HPLC     99.1%       NLT 98.0%\nBatch/Lot       B-1\n"
+  },
+  {
+    "name": "parse_result_and_spec_columns",
+    "type": "parse",
+    "text": "Purity (HPLC)    99.1 %     NLT 98.0 %\nNet Weight       5 mg      -\n"
+  },
+  { "name": "parse_spelled_out_separator_beats_the_header_guard", "type": "parse", "text": "Method: Result\n" },
+  {
     "name": "parse_two_fields_on_one_line",
     "type": "parse",
     "text": "Test Method: RP-HPLC    Test Date: 2026-02-14\n"

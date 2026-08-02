@@ -15,10 +15,10 @@ import argparse
 import sys
 
 from . import __version__
-from .parser import parse_coa
-from .purity import compute_purity
-from .recon import compute_recon
-from .redflags import Status, run_checklist
+from .parser import ParsedCoa, parse_coa
+from .purity import PurityResult, compute_purity
+from .recon import ReconResult, compute_recon
+from .redflags import Flag, Status, run_checklist
 from .report import render_parse_human, render_parse_json, render_recon_human, render_recon_json
 
 # Defense in depth ahead of parser.py's own (smaller) character cap: reject
@@ -80,10 +80,10 @@ def cmd_parse(args: argparse.Namespace) -> int:
 
 def _parse_recon(
     args: argparse.Namespace,
-    coa,
-    purity,
+    coa: ParsedCoa,
+    purity: PurityResult | None,
     purity_error: str | None,
-) -> tuple[object | None, str | None, str | None]:
+) -> tuple[ReconResult | None, str | None, str | None]:
     """Reconstitution math for `parse`, or (None, None, None) if none was asked for.
 
     The default basis is the deliverable mass the purity block just computed,
@@ -118,7 +118,7 @@ def _parse_recon(
         return None, str(e), basis
 
 
-def _fail_code(fail_on: str, flags: list) -> int:
+def _fail_code(fail_on: str, flags: list[Flag]) -> int:
     """Exit code for `parse` under --fail-on.
 
     Default is `never`: a failed check is information, not a tool error, and

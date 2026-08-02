@@ -96,6 +96,21 @@ _COLUMN_GAP = re.compile(r"\t+|[ \t]{2,}")
 # than it could ever find.
 MAX_LINE_SEGMENTS = 32
 
+# Column headings. A punctuation-free table row whose value side is one of these
+# is the header of the table, not a row of it: "Test  Method  Result  Spec" would
+# otherwise read as a method of "Result", and CC-METHOD would report PASS on it -
+# the same non-empty-garbage failure the separator rules above exist to stop.
+# Only consulted for candidates built by gluing two columns together; a line that
+# spells out "Method: Result" is taken at face value.
+_COLUMN_HEADER_WORDS = frozenset(
+    {"result", "results", "value", "values", "specification", "specifications",
+     "spec", "specs", "method", "methods", "test", "tests", "unit", "units",
+     "limit", "limits", "analysis", "parameter", "parameters", "criteria",
+     "criterion", "observation", "observations", "report", "item", "items",
+     "acceptance", "reference", "requirement", "requirements", "standard",
+     "description", "attribute", "attributes", "range", "actual", "found"}
+)
+
 
 _PRODUCT_PATTERNS = [
     re.compile(r"^product\s*name\s*" + _SEP + r"(.+)$", re.IGNORECASE),
@@ -221,6 +236,10 @@ def _segments(line: str) -> list[str]:
     return parts
 
 
+def _is_column_header(value: str) -> bool:
+    return value.strip().strip(".:()").lower() in _COLUMN_HEADER_WORDS
+
+
 def _candidates(line: str) -> tuple[list[str], list[str]]:
     """The label/value strings a line could hold, in two tiers.
 
@@ -235,7 +254,11 @@ def _candidates(line: str) -> tuple[list[str], list[str]]:
     segments = _segments(line)
     if len(segments) < 2:
         return segments, []
-    joined = [f"{segments[i]}: {segments[i + 1]}" for i in range(len(segments) - 1)]
+    joined = [
+        f"{segments[i]}: {segments[i + 1]}"
+        for i in range(len(segments) - 1)
+        if not _is_column_header(segments[i + 1])
+    ]
     return segments, joined
 
 

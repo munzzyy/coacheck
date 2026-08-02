@@ -91,6 +91,23 @@ const COLUMN_GAP = /\t+|[ \t]{2,}/g;
 // running every label pattern over every piece of it would cost more than it could ever find.
 export const MAX_LINE_SEGMENTS = 32;
 
+// Column headings. A punctuation-free table row whose value side is one of these is the header
+// of the table, not a row of it: "Test  Method  Result  Spec" would otherwise read as a method
+// of "Result", and CC-METHOD would report PASS on it - the same non-empty-garbage failure the
+// separator rules above exist to stop. Only consulted for candidates built by gluing two
+// columns together; a line that spells out "Method: Result" is taken at face value.
+const COLUMN_HEADER_WORDS = new Set([
+  "result", "results", "value", "values", "specification", "specifications",
+  "spec", "specs", "method", "methods", "test", "tests", "unit", "units",
+  "limit", "limits", "analysis", "parameter", "parameters", "criteria",
+  "criterion", "observation", "observations", "report", "item", "items",
+  "acceptance", "reference", "requirement", "requirements", "standard",
+  "description", "attribute", "attributes", "range", "actual", "found",
+]);
+
+// Python's str.strip(".:()") drops any run of those characters from both ends.
+const HEADER_TRIM = /^[.:()]+|[.:()]+$/g;
+
 // Python's str.splitlines() breaks on more than \r\n/\r/\n - vertical tab, form feed, the
 // file/group/record separators, NEL, and the Unicode line/paragraph separators too. Match
 // that set so the same bytes split into the same lines in both engines.
@@ -197,11 +214,17 @@ function segments(line) {
 // makes a punctuation-free table row ("Purity (HPLC)      99.1 %") parse at all. Tier one is
 // tried first for every pattern, so a line that already spells out its separator never gets
 // reinterpreted as a table row.
+function isColumnHeader(value) {
+  return COLUMN_HEADER_WORDS.has(value.trim().replace(HEADER_TRIM, "").toLowerCase());
+}
+
 function candidates(line) {
   const segs = segments(line);
   if (segs.length < 2) return [segs, []];
   const joined = [];
-  for (let i = 0; i < segs.length - 1; i++) joined.push(`${segs[i]}: ${segs[i + 1]}`);
+  for (let i = 0; i < segs.length - 1; i++) {
+    if (!isColumnHeader(segs[i + 1])) joined.push(`${segs[i]}: ${segs[i + 1]}`);
+  }
   return [segs, joined];
 }
 
