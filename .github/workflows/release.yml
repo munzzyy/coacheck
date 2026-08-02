@@ -1,0 +1,47 @@
+name: Publish to PyPI
+
+# Triggered by publishing a GitHub Release, not by pushing a tag. A tag can be pushed, moved
+# or deleted by mistake; cutting a release is a deliberate act, and it keeps `git tag` free to
+# mark a commit without that also shipping a package.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write  # OIDC token for PyPI Trusted Publishing - no long-lived API token
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.12"
+
+      - name: Build sdist and wheel
+        run: |
+          python -m pip install --upgrade build twine
+          python -m build
+
+      - name: Check package metadata
+        run: python -m twine check dist/*
+
+      - name: Install the built wheel and smoke-test it
+        run: |
+          python -m venv /tmp/v
+          /tmp/v/bin/python -m pip install dist/*.whl
+          /tmp/v/bin/python -c "import coacheck"
+          /tmp/v/bin/coacheck --version
+          /tmp/v/bin/coacheck recon --vial 5 --water 2 --dose 250
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # v1.14.0

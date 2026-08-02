@@ -64,3 +64,30 @@ jobs:
         with:
           node-version: "22"
       - run: npx --yes web-ext@10.5.0 lint --source-dir=extension
+
+  # Everything release.yml does except the upload. The test matrix runs `python -m coacheck`,
+  # which never touches [project.scripts], so a broken console script or bad packaging metadata
+  # used to only show up at publish time.
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.12"
+      - name: Build sdist and wheel
+        run: |
+          python -m pip install --upgrade build twine
+          python -m build
+      - name: Check package metadata
+        run: python -m twine check dist/*
+      - name: Install the wheel and run the installed console script
+        run: |
+          python -m venv /tmp/v
+          /tmp/v/bin/python -m pip install dist/*.whl
+          /tmp/v/bin/python -c "import coacheck"
+          /tmp/v/bin/coacheck --version
+          /tmp/v/bin/coacheck recon --vial 5 --water 2 --dose 250
+          /tmp/v/bin/coacheck parse tests/fixtures/coa_clean.txt --recon-water 2 --dose 250
