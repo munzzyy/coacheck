@@ -18,8 +18,13 @@
   const api = globalThis.browser ?? globalThis.chrome;
   const HOST_ID = "coacheck-overlay-host";
 
+  // Every host, not just the first one getElementById would find. Two can exist at once when
+  // the toolbar button is clicked again while a results panel is still on screen: without
+  // this, cancelling the second selection removed the panel and left its full-screen crosshair
+  // veil behind, at the maximum z-index, with its listeners already gone. Nothing short of a
+  // reload got rid of it.
   function removeHost() {
-    document.getElementById(HOST_ID)?.remove();
+    for (const node of document.querySelectorAll(`#${HOST_ID}`)) node.remove();
   }
 
   function mountShadow() {
@@ -32,6 +37,9 @@
   }
 
   function startSelection() {
+    // Same reason mountShadow does it: a results panel from a previous run is still mounted
+    // under this id, and a second host with the same id is what strands the veil.
+    removeHost();
     const host = document.createElement("div");
     host.id = HOST_ID;
     Object.assign(host.style, {
