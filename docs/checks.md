@@ -26,6 +26,14 @@ salt/water is actually in the vial. That gap is exactly why an unstated net cont
 Values outside the physically possible 0-100% range are computed through rather than rejected;
 CC-PURITY and CC-NET (below) are what flag them.
 
+`labeled_mg` is whatever mass the document states, converted to mg. The parser accepts `mg`,
+`mcg`/`ug`/`µg` and `g`; a unit it doesn't recognize leaves the field missing rather than
+guessing, because a mass wrong by a factor of a thousand is worse than no mass at all.
+
+A purity figure can carry a leading bound, written as a symbol (`>=`, `<`, `≥`) or as words
+(`NLT`, `NMT`, `min.`, `max.`, `not less than`, `greater than`). Word forms are normalized to
+the symbol they mean, so `NLT 98.0%` and `>=98.0%` reach CC-PURITY as the same thing.
+
 ## Reconstitution math
 
 ```
@@ -37,6 +45,12 @@ doses_per_vial = (vial_mg * 1000) / dose_mcg
 
 The 100-units-per-mL ratio is a fixed property of a U-100 insulin syringe, not a recommendation.
 This tool does not suggest a dose - `--dose` is whatever number you give it.
+
+`vial_mg` depends on where the math was run from. The `recon` subcommand uses `--vial`
+verbatim. `parse --recon-water/--dose` defaults to `actual_mg` from the purity block above,
+since a doses-per-vial figure off `labeled_mg` contradicts the shortfall the same report just
+printed; `--recon-basis labeled` switches back. The extension's calculator works the same way
+and shows which basis it used.
 
 ## Red-flag checks
 

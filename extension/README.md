@@ -84,7 +84,7 @@ extension is worse than no extension, so the port is pinned to the real Python e
 parity gate, not just "translated carefully and hoped":
 
 - `tests/web_parity/gen_fixtures.py` runs the real `coacheck` package over every case in
-  `cases.json` (all 8 fixtures in `tests/fixtures/`, plus edge cases mined from the Python
+  `cases.json` (every fixture in `tests/fixtures/`, plus edge cases mined from the Python
   test suite: comma decimals, purity over 100%, placeholder lab names, and so on) and writes
   each result to `fixtures/*.json` (gitignored, regenerated every run).
 - `tests/web_parity/check.mjs` runs the exact same cases through `extension/engine/` in

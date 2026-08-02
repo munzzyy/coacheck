@@ -18,7 +18,14 @@ math on what you give it.
 
 ## Install
 
-Pure standard library, Python 3.9+, no runtime dependencies. Clone it and it runs:
+Pure standard library, Python 3.9+, no runtime dependencies.
+
+```bash
+pipx install git+https://github.com/munzzyy/coacheck
+```
+
+There's no PyPI release yet, so install straight from the repo. Or clone it and run it in
+place, which needs nothing installed at all:
 
 ```bash
 git clone https://github.com/munzzyy/coacheck
@@ -73,11 +80,53 @@ Red-flag checklist
 cat some-coa.txt | coacheck parse
 ```
 
+Most real COAs arrive as a PDF. Convert it first and pipe it in. `-layout` matters: it keeps
+the column alignment, and a COA is nearly always a two-column table.
+
+```bash
+pdftotext -layout coa.pdf - | coacheck parse
+```
+
 Pass `--json` for machine-readable output:
 
 ```bash
 coacheck parse tests/fixtures/coa_clean.txt --json
 ```
+
+`--fail-on` turns the checklist into an exit code so `parse` can gate a script. `--fail-on
+fail` exits 3 when any check FAILs, `--fail-on warn` exits 3 on a WARN or a FAIL. The default
+is `never`, which always exits 0.
+
+```bash
+coacheck parse coa.txt --fail-on fail && echo "nothing obviously missing"
+```
+
+### Reconstitution off a parsed COA
+
+`parse` can do the reconstitution math too, and it uses the deliverable mass it just computed
+rather than the number on the label:
+
+```
+$ coacheck parse tests/fixtures/coa_clean.txt --recon-water 2 --dose 250
+...
+Purity math
+  Labeled mass              : 5 mg
+  Actual deliverable peptide: 4.534 mg (90.7% of labeled)
+  Shortfall                 : 0.466 mg (9.3%)
+
+Reconstitution (from the actual deliverable mass, not the labeled 5 mg)
+  Vial                : 4.53383 mg
+  Bacteriostatic water: 2 mL
+  Concentration       : 2266.91 mcg/mL
+  Dose                : 250 mcg
+  Draw                : 0.1103 mL (11.0 units on a U-100 insulin syringe)
+  Doses per vial      : 18.14
+...
+```
+
+The label implies 20.00 doses; the document's own purity figures say 18.14. Pass
+`--recon-basis labeled` if you want the label number anyway. If the purity math couldn't run
+there's no deliverable mass to use, and the block says so instead of quietly falling back.
 
 ### Reconstitution math
 
@@ -109,15 +158,20 @@ engine is pinned to match the Python package exactly.
 
 - Parses a COA text blob for product name, HPLC purity, net peptide content, mass/quantity,
   batch/lot number, test date, test method, and testing lab, tolerating the label wording real
-  vendor documents vary ("Purity", "HPLC Purity", "Purity (HPLC)", dash or colon separators,
-  case-insensitive). See [docs/checks.md](docs/checks.md) for the exact formulas.
+  vendor documents vary ("Purity", "HPLC Purity", "Purity (HPLC)", colon, equals or dash
+  separators, case-insensitive). It also reads two-column table rows with nothing but
+  whitespace between label and value, which is what `pdftotext -layout` and the extension's OCR
+  produce. Purity bounds written as words ("NLT 98.0%", "min. 98.0%") count the same as `>=`,
+  and a mass in mcg, ug or g is normalized to mg. See [docs/checks.md](docs/checks.md) for the
+  exact formulas.
 - Computes actual deliverable peptide mass from labeled mass, purity, and (if stated) net
   peptide content, plus the shortfall against the label in both mg and percent.
 - Runs a 7-item red-flag checklist (`CC-PURITY`, `CC-BATCH`, `CC-LAB`, `CC-METHOD`, `CC-DATE`,
   `CC-PURITY-METHOD`, `CC-NET`), each a stable id with a pass/warn/fail status, documented in
   [docs/checks.md](docs/checks.md).
 - Computes reconstitution math: concentration, mL to draw, units on a U-100 insulin syringe, and
-  doses per vial, from a vial mass, diluent volume, and a dose you supply.
+  doses per vial, from a vial mass, diluent volume, and a dose you supply. Run off a parsed COA
+  it uses the deliverable mass, not the labeled one.
 
 ## What it does not do
 
@@ -128,8 +182,9 @@ engine is pinned to match the Python package exactly.
   field is taken at face value from the text you give it.
 - It does not recommend a dose, a product, or a source. `recon` computes whatever `--dose` you
   pass it; it has no opinion on what that number should be.
-- It's a regex parser over plain text. It doesn't do OCR, doesn't read PDFs or images, and can
-  miss a field worded in a way none of its label patterns cover - see
+- The `coacheck` CLI is a regex parser over plain text. It doesn't do OCR and doesn't read PDFs
+  or images (the browser extension does OCR, see above; for a PDF, pipe `pdftotext -layout`
+  into it). It can also miss a field worded in a way none of its label patterns cover - see
   [CONTRIBUTING.md](CONTRIBUTING.md) if you hit one.
 - No network calls, no telemetry, nothing phones home.
 
@@ -140,6 +195,9 @@ engine is pinned to match the Python package exactly.
 - `1` - invalid input: unparseable arguments to `recon`'s math, or a COA text blob that's
   oversized or the wrong type.
 - `2` - couldn't read the input at all (file not found) or a command-line usage error.
+- `3` - only with `--fail-on warn` or `--fail-on fail` on `parse`: the run succeeded and the
+  checklist came back at or above the level you asked to fail on. Without the flag this code
+  never happens.
 
 ## Contributing
 
@@ -147,7 +205,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). New label variants and new checks land w
 
 ## License
 
-MIT — free to use, change, and ship, commercial or not. See [LICENSE](LICENSE).
+MIT. Free to use, change, and ship, commercial or not. See [LICENSE](LICENSE).
 
 ## Support
 
