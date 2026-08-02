@@ -7,6 +7,8 @@
   { "name": "fixture_coa_missing_batch", "type": "parse", "fixture": "coa_missing_batch.txt" },
   { "name": "fixture_coa_missing_lab", "type": "parse", "fixture": "coa_missing_lab.txt" },
   { "name": "fixture_coa_no_method", "type": "parse", "fixture": "coa_no_method.txt" },
+  { "name": "fixture_coa_bom", "type": "parse", "fixture": "coa_bom.txt" },
+  { "name": "fixture_coa_table_layout", "type": "parse", "fixture": "coa_table_layout.txt" },
 
   { "name": "parse_empty_text", "type": "parse", "text": "" },
   { "name": "parse_whitespace_only", "type": "parse", "text": "   \n\n\t  \n" },
@@ -43,6 +45,47 @@
   { "name": "parse_nel_separator", "type": "parse", "text": "Product Name: RC-118\u0085Purity: 92%\u0085Net Weight: 5 mg\u0085Test Method: RP-HPLC\u0085" },
   { "name": "parse_line_separator_u2028", "type": "parse", "text": "Product Name: RC-118\u2028Purity: 92%\u2028Net Weight: 5 mg\u2028Test Method: RP-HPLC\u2028" },
   { "name": "parse_fullwidth_digits_not_parsed", "type": "parse", "text": "Purity: ９２．０%\n" },
+  { "name": "parse_hyphen_inside_lot_label", "type": "parse", "text": "Lot-Nr: RC118-A\n" },
+  { "name": "parse_hyphen_inside_batch_label", "type": "parse", "text": "Batch-No: RC118-A\n" },
+  { "name": "parse_hyphen_inside_lab_label_is_not_a_separator", "type": "parse", "text": "Lab-tested: yes\n" },
+  { "name": "parse_spaced_dash_separator_still_works", "type": "parse", "text": "Lot No - SP200/2026-11\nPurity (HPLC) - 98.9%\n" },
+  { "name": "parse_equals_separator", "type": "parse", "text": "Purity = 99.1%\n" },
+  { "name": "parse_en_dash_separator", "type": "parse", "text": "Purity \u2013 99.1%\n" },
+  { "name": "parse_em_dash_separator", "type": "parse", "text": "Purity \u2014 99.1%\n" },
+  {
+    "name": "parse_whitespace_column_table",
+    "type": "parse",
+    "text": "Purity (HPLC)      99.1 %\nBatch/Lot          RC118-A\nTest Method        RP-HPLC\nNet Weight         5 mg\n"
+  },
+  { "name": "parse_tab_column_table", "type": "parse", "text": "Purity (HPLC)\t99.1 %\nNet Weight\t5 mg\n" },
+  { "name": "parse_prose_with_double_space_not_a_field", "type": "parse", "text": "Purity  is  important\n" },
+  {
+    "name": "parse_two_fields_on_one_line",
+    "type": "parse",
+    "text": "Test Method: RP-HPLC    Test Date: 2026-02-14\n"
+  },
+  { "name": "parse_batch_value_with_internal_spaces", "type": "parse", "text": "Batch No.: RC 118 A\n" },
+  {
+    "name": "parse_nlt_qualifier_is_a_lower_bound",
+    "type": "parse",
+    "text": "Purity: NLT 98.0%\nNet Weight: 5 mg\nTest Method: RP-HPLC\n"
+  },
+  {
+    "name": "parse_nmt_qualifier_is_an_upper_bound",
+    "type": "parse",
+    "text": "Purity: NMT 98.0%\nNet Weight: 5 mg\nTest Method: RP-HPLC\n"
+  },
+  { "name": "parse_min_dot_qualifier", "type": "parse", "text": "Purity: min. 98.0%\n" },
+  { "name": "parse_maximum_word_qualifier", "type": "parse", "text": "Purity: maximum 98.0%\n" },
+  { "name": "parse_greater_than_word_qualifier", "type": "parse", "text": "Purity: greater than 99%\n" },
+  { "name": "parse_not_less_than_word_qualifier", "type": "parse", "text": "Purity: not less than 99%\n" },
+  { "name": "parse_mcg_mass_normalized_to_mg", "type": "parse", "text": "Quantity: 5000 mcg\nPurity: 99%\n" },
+  { "name": "parse_micro_sign_mass_normalized_to_mg", "type": "parse", "text": "Net Weight: 5000 µg\n" },
+  { "name": "parse_greek_mu_mass_normalized_to_mg", "type": "parse", "text": "Net Weight: 5000 μg\n" },
+  { "name": "parse_ug_mass_normalized_to_mg", "type": "parse", "text": "Net Weight: 5000 ug\n" },
+  { "name": "parse_gram_mass_normalized_to_mg", "type": "parse", "text": "Net Weight: 0.005 g\nPurity: 99%\n" },
+  { "name": "parse_mg_per_vial_suffix_still_parses", "type": "parse", "text": "Quantity: 5 mg/vial\n" },
+  { "name": "parse_unknown_mass_unit_is_dropped", "type": "parse", "text": "Net Weight: 5 kg\n" },
   { "name": "parse_absurdly_long_number_dropped", "type": "parse", "text": "Purity: 99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999%\nNet Weight: 5 mg\n" },
 
   { "name": "purity_basic_no_net_content", "type": "purity", "labeled_mg": 5.0, "purity_pct": 98.0 },

@@ -139,6 +139,171 @@ class LabelVariants(unittest.TestCase):
         self.assertEqual(parse_coa("purity: 95%\n").purity_pct, 95.0)
 
 
+class SeparatorRules(unittest.TestCase):
+    """A dash only separates a label from its value when whitespace comes first.
+    Compound label names carry their own hyphens, and reading the tail of the
+    label as the value produced non-empty garbage that then passed the
+    checklist ("Lot-Nr: RC118-A" used to yield a batch number of "Nr:")."""
+
+    def test_hyphen_inside_lot_label_is_not_the_separator(self):
+        self.assertEqual(parse_coa("Lot-Nr: RC118-A\n").batch_lot, "RC118-A")
+
+    def test_hyphen_inside_batch_label_is_not_the_separator(self):
+        self.assertEqual(parse_coa("Batch-No: RC118-A\n").batch_lot, "RC118-A")
+
+    def test_hyphen_inside_lab_label_yields_no_lab(self):
+        # "Lab-tested: yes" names no lab. It used to come back as "tested: yes",
+        # which the checklist reported as PASS.
+        self.assertIsNone(parse_coa("Lab-tested: yes\n").lab_name)
+
+    def test_spaced_dash_separator_still_works(self):
+        coa = parse_coa("Lot No - SP200/2026-11\nPurity (HPLC) - 98.9%\n")
+        self.assertEqual(coa.batch_lot, "SP200/2026-11")
+        self.assertEqual(coa.purity_pct, 98.9)
+
+    def test_equals_separator(self):
+        self.assertEqual(parse_coa("Purity = 99.1%\n").purity_pct, 99.1)
+
+    def test_long_dash_separator(self):
+        # OCR of a printed COA turns plenty of hyphens into an en or em dash.
+        for dash in (chr(0x2013), chr(0x2014)):
+            with self.subTest(dash=dash):
+                self.assertEqual(parse_coa(f"Purity {dash} 99.1%\n").purity_pct, 99.1)
+
+
+class TableLayout(unittest.TestCase):
+    """Real COAs, and the OCR of one, are mostly two-column tables with the
+    value aligned by whitespace and no punctuation at all. A gap of two or more
+    spaces (or a tab) reads as a column boundary."""
+
+    def test_whitespace_column_row_parses(self):
+        coa = parse_coa(
+            "Purity (HPLC)      99.1 %\n"
+            "Batch/Lot          RC118-A\n"
+            "Test Method        RP-HPLC\n"
+            "Net Weight         5 mg\n"
+        )
+        self.assertEqual(coa.purity_pct, 99.1)
+        self.assertEqual(coa.batch_lot, "RC118-A")
+        self.assertEqual(coa.method, "RP-HPLC")
+        self.assertEqual(coa.mass_mg, 5.0)
+
+    def test_tab_column_row_parses(self):
+        coa = parse_coa("Purity (HPLC)\t99.1 %\nNet Weight\t5 mg\n")
+        self.assertEqual(coa.purity_pct, 99.1)
+        self.assertEqual(coa.mass_mg, 5.0)
+
+    def test_table_layout_fixture(self):
+        coa = parse_coa(fixture_text("coa_table_layout.txt"))
+        self.assertEqual(coa.product_name, "Table Layout Peptide TL-300")
+        self.assertEqual(coa.batch_lot, "TL300-2026-04")
+        self.assertEqual(coa.mass_mg, 5.0)
+        self.assertEqual(coa.purity_pct, 99.1)
+        self.assertEqual(coa.net_content_pct, 92.4)
+        self.assertEqual(coa.method, "RP-HPLC")
+        self.assertEqual(coa.test_date, "2026-04-02")
+        self.assertEqual(coa.lab_name, "Northgate Analytical")
+
+    def test_single_space_is_not_a_column_boundary(self):
+        # "Sample Peptide SP-200" is one value, not three columns.
+        self.assertEqual(
+            parse_coa("Peptide Name - Sample Peptide SP-200\n").product_name,
+            "Sample Peptide SP-200",
+        )
+
+    def test_prose_with_a_wide_gap_is_not_a_field(self):
+        # The value side stays anchored, so a label word followed by words
+        # rather than a number can't be read as a purity figure.
+        self.assertIsNone(parse_coa("Purity  is  important\n").purity_pct)
+
+    def test_padded_colon_is_still_one_field(self):
+        # A gap that touches a separator is padding, not a column boundary.
+        self.assertEqual(parse_coa("Purity   :    98.5 %\n").purity_pct, 98.5)
+
+
+class TwoFieldsOnOneLine(unittest.TestCase):
+    """A row rendered from a two-column table can hold two complete fields. The
+    first used to swallow the second and report the whole run as its value."""
+
+    def test_method_and_date_on_one_line(self):
+        coa = parse_coa("Test Method: RP-HPLC    Test Date: 2026-02-14\n")
+        self.assertEqual(coa.method, "RP-HPLC")
+        self.assertEqual(coa.test_date, "2026-02-14")
+
+    def test_batch_value_keeps_internal_spaces(self):
+        # The old capture stopped at the first space and returned just "RC".
+        self.assertEqual(parse_coa("Batch No.: RC 118 A\n").batch_lot, "RC 118 A")
+
+
+class WordFormQualifiers(unittest.TestCase):
+    """Pharma COAs write purity bounds as words ("NLT 98.0%") at least as often
+    as symbols. Unmatched, they left purity None and CC-PURITY reported FAIL on
+    a document that plainly states a purity."""
+
+    def test_nlt_is_a_lower_bound(self):
+        coa = parse_coa("Purity: NLT 98.0%\n")
+        self.assertEqual(coa.purity_pct, 98.0)
+        self.assertEqual(coa.purity_qualifier, ">=")
+
+    def test_nmt_is_an_upper_bound(self):
+        coa = parse_coa("Purity: NMT 98.0%\n")
+        self.assertEqual(coa.purity_qualifier, "<=")
+
+    def test_min_dot(self):
+        self.assertEqual(parse_coa("Purity: min. 98.0%\n").purity_qualifier, ">=")
+
+    def test_minimum_word(self):
+        self.assertEqual(parse_coa("Purity: minimum 98.0%\n").purity_qualifier, ">=")
+
+    def test_maximum_word(self):
+        self.assertEqual(parse_coa("Purity: maximum 98.0%\n").purity_qualifier, "<=")
+
+    def test_greater_than_words(self):
+        self.assertEqual(parse_coa("Purity: greater than 99%\n").purity_qualifier, ">")
+
+    def test_less_than_words(self):
+        self.assertEqual(parse_coa("Purity: less than 99%\n").purity_qualifier, "<")
+
+    def test_not_less_than_words(self):
+        self.assertEqual(parse_coa("Purity: not less than 99%\n").purity_qualifier, ">=")
+
+    def test_not_more_than_words(self):
+        self.assertEqual(parse_coa("Purity: not more than 99%\n").purity_qualifier, "<=")
+
+    def test_symbols_pass_through_unchanged(self):
+        self.assertEqual(parse_coa("Purity: >=98%\n").purity_qualifier, ">=")
+
+
+class MassUnits(unittest.TestCase):
+    """Vials get labeled in mcg and g too. Everything normalizes to mg so the
+    purity and reconstitution math downstream only ever sees one unit."""
+
+    def test_mcg_normalizes_to_mg(self):
+        self.assertEqual(parse_coa("Quantity: 5000 mcg\n").mass_mg, 5.0)
+
+    def test_micro_sign_normalizes_to_mg(self):
+        self.assertEqual(parse_coa("Net Weight: 5000 " + chr(0x00B5) + "g\n").mass_mg, 5.0)
+
+    def test_greek_mu_normalizes_to_mg(self):
+        self.assertEqual(parse_coa("Net Weight: 5000 " + chr(0x03BC) + "g\n").mass_mg, 5.0)
+
+    def test_ug_normalizes_to_mg(self):
+        self.assertEqual(parse_coa("Net Weight: 5000 ug\n").mass_mg, 5.0)
+
+    def test_gram_normalizes_to_mg(self):
+        self.assertEqual(parse_coa("Net Weight: 0.005 g\n").mass_mg, 5.0)
+
+    def test_mg_is_unchanged(self):
+        self.assertEqual(parse_coa("Net Weight: 5 mg\n").mass_mg, 5.0)
+
+    def test_mg_per_vial_suffix_still_parses(self):
+        self.assertEqual(parse_coa("Quantity: 5 mg/vial\n").mass_mg, 5.0)
+
+    def test_unknown_unit_is_dropped_rather_than_guessed(self):
+        # Better a missing field than a mass wrong by a factor of a thousand.
+        self.assertIsNone(parse_coa("Net Weight: 5 kg\n").mass_mg)
+
+
 class DecimalSeparatorVariants(unittest.TestCase):
     """COAs from outside the US/UK commonly write decimals with a comma
     ("98,99%") instead of a dot - both must parse to the identical float."""
@@ -278,6 +443,18 @@ class PathologicalWhitespace(unittest.TestCase):
         # to still backtrack quadratically because the qualifier group left two
         # adjacent \s* runs. Keep a colon-present case so that path stays bounded.
         text = "purity:" + (" " * (MAX_COA_TEXT_CHARS - 8)) + "x"
+        start = time.perf_counter()
+        parse_coa(text)
+        elapsed = time.perf_counter() - start
+        self.assertLess(elapsed, 5.0)
+
+    def test_many_narrow_columns_parse_quickly(self):
+        # Column splitting turns one line into several candidate strings, and
+        # every one of them is run past every label pattern. MAX_LINE_SEGMENTS
+        # is what stops a wall of two-space-separated tokens from multiplying
+        # that work without bound.
+        line = "a  " * 400
+        text = "\n".join([line] * 80)
         start = time.perf_counter()
         parse_coa(text)
         elapsed = time.perf_counter() - start

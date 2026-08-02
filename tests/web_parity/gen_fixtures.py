@@ -102,6 +102,19 @@ def main() -> int:
         print(f"error: duplicate case names in cases.json: {sorted(dupes)}", file=sys.stderr)
         return 2
 
+    # Every text fixture has to be in the gate. A fixture that isn't covered is a shape of COA
+    # the two engines are free to disagree about, and nothing would ever say so.
+    on_disk = {f for f in os.listdir(FIXTURES_DIR) if f.endswith(".txt")}
+    covered = {c["fixture"] for c in cases if "fixture" in c}
+    missing = sorted(on_disk - covered)
+    if missing:
+        print(
+            "error: fixtures with no parity case in cases.json: "
+            + ", ".join(missing),
+            file=sys.stderr,
+        )
+        return 2
+
     os.makedirs(OUT_DIR, exist_ok=True)
     for case in cases:
         try:
