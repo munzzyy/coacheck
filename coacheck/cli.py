@@ -18,7 +18,7 @@ from . import __version__
 from .parser import parse_coa
 from .purity import compute_purity
 from .recon import compute_recon
-from .redflags import run_checklist
+from .redflags import Status, run_checklist
 from .report import render_parse_human, render_parse_json, render_recon_human, render_recon_json
 
 # Defense in depth ahead of parser.py's own (smaller) character cap: reject
@@ -69,10 +69,66 @@ def cmd_parse(args: argparse.Namespace) -> int:
         except ValueError as e:
             purity_error = str(e)
 
+    recon, recon_error, recon_basis = _parse_recon(args, coa, purity, purity_error)
+
     if args.json:
-        print(render_parse_json(coa, flags, purity, purity_error))
+        print(render_parse_json(coa, flags, purity, purity_error, recon, recon_error, recon_basis))
     else:
-        print(render_parse_human(coa, flags, purity, purity_error))
+        print(render_parse_human(coa, flags, purity, purity_error, recon, recon_error, recon_basis))
+    return _fail_code(args.fail_on, flags)
+
+
+def _parse_recon(
+    args: argparse.Namespace,
+    coa,
+    purity,
+    purity_error: str | None,
+) -> tuple[object | None, str | None, str | None]:
+    """Reconstitution math for `parse`, or (None, None, None) if none was asked for.
+
+    The default basis is the deliverable mass the purity block just computed,
+    not the labeled mass. Reporting that a 5 mg vial really holds 4.534 mg and
+    then dividing 5 mg into doses is the tool contradicting itself on the same
+    screen. `--recon-basis labeled` opts back into the label figure.
+
+    When the requested basis isn't available the block says so and says which
+    flag would change that; it never quietly falls back to the other mass.
+    """
+    if args.recon_water is None:
+        return None, None, None
+
+    basis = args.recon_basis
+    dose_mcg = args.dose if args.unit == "mcg" else args.dose * 1000.0
+
+    if basis == "actual":
+        if purity is None:
+            return None, (
+                f"{purity_error}, so there is no deliverable mass to compute from. "
+                "Pass --recon-basis labeled to use the mass on the label instead."
+            ), basis
+        vial_mg = purity.actual_mg
+    else:
+        if coa.mass_mg is None:
+            return None, "no mass/quantity found in the document", basis
+        vial_mg = coa.mass_mg
+
+    try:
+        return compute_recon(vial_mg, args.recon_water, dose_mcg), None, basis
+    except ValueError as e:
+        return None, str(e), basis
+
+
+def _fail_code(fail_on: str, flags: list) -> int:
+    """Exit code for `parse` under --fail-on.
+
+    Default is `never`: a failed check is information, not a tool error, and
+    that contract is documented. The other two modes return 3 so they can never
+    be confused with 1 (invalid input) or 2 (unreadable input / usage error).
+    """
+    if fail_on == "fail" and any(f.status is Status.FAIL for f in flags):
+        return 3
+    if fail_on == "warn" and any(f.status in (Status.FAIL, Status.WARN) for f in flags):
+        return 3
     return 0
 
 
@@ -103,6 +159,19 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("parse", help="parse a COA and run the purity math + red-flag checklist")
     s.add_argument("file", nargs="?", default=None,
                     help="path to a COA text file (default: read from stdin)")
+    s.add_argument("--recon-water", type=float, default=None, metavar="ML",
+                    help="also do the reconstitution math, with this much bacteriostatic "
+                         "water in mL (requires --dose)")
+    s.add_argument("--dose", type=float, default=None,
+                    help="dose to draw (in --unit), for --recon-water")
+    s.add_argument("--unit", default="mcg", choices=["mcg", "mg"],
+                    help="unit of --dose (default: mcg)")
+    s.add_argument("--recon-basis", default="actual", choices=["actual", "labeled"],
+                    help="mass the reconstitution math runs on: the deliverable mass computed "
+                         "from purity (default) or the mass printed on the label")
+    s.add_argument("--fail-on", default="never", choices=["never", "warn", "fail"],
+                    help="exit 3 when the checklist has a FAIL, or a WARN or FAIL "
+                         "(default: never, which always exits 0)")
     s.add_argument("--json", action="store_true", help="machine-readable JSON output")
     s.set_defaults(func=cmd_parse)
 
@@ -121,6 +190,8 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    if args.cmd == "parse" and (args.recon_water is None) != (args.dose is None):
+        parser.error("--recon-water and --dose have to be given together")
     return args.func(args)
 
 

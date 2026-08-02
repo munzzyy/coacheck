@@ -85,6 +85,133 @@ class ParseCommand(unittest.TestCase):
         self.assertIn("too large", err)
 
 
+class ParseReconstitution(unittest.TestCase):
+    """`parse --recon-water/--dose` runs the reconstitution math off the mass the
+    purity block just computed, so doses per vial stops contradicting the
+    shortfall printed directly above it."""
+
+    def test_default_basis_is_the_deliverable_mass(self):
+        code, out, _err = _run(
+            ["parse", fixture_path("coa_clean.txt"), "--recon-water", "2", "--dose", "250"]
+        )
+        self.assertEqual(code, 0)
+        self.assertIn("actual deliverable mass", out)
+        # 5 mg labeled, 99.1% purity, 91.5% net content -> 4.5338 mg deliverable,
+        # which is 18.14 doses of 250 mcg, not the 20.00 the label implies.
+        self.assertIn("Doses per vial      : 18.14", out)
+
+    def test_labeled_basis_opts_back_into_the_label_figure(self):
+        code, out, _err = _run(
+            ["parse", fixture_path("coa_clean.txt"), "--recon-water", "2", "--dose", "250",
+             "--recon-basis", "labeled"]
+        )
+        self.assertEqual(code, 0)
+        self.assertIn("from the labeled mass", out)
+        self.assertIn("Doses per vial      : 20.00", out)
+
+    def test_json_recon_payload(self):
+        code, out, _err = _run(
+            ["parse", fixture_path("coa_clean.txt"), "--recon-water", "2", "--dose", "250",
+             "--json"]
+        )
+        self.assertEqual(code, 0)
+        recon = json.loads(out)["recon"]
+        self.assertEqual(recon["basis"], "actual")
+        self.assertEqual(recon["labeled_mg"], 5.0)
+        self.assertIsNone(recon["error"])
+        self.assertAlmostEqual(recon["result"]["vial_mg"], 4.533825)
+        self.assertAlmostEqual(recon["result"]["doses_per_vial"], 18.1353)
+
+    def test_recon_key_is_null_when_not_asked_for(self):
+        code, out, _err = _run(["parse", fixture_path("coa_clean.txt"), "--json"])
+        self.assertEqual(code, 0)
+        self.assertIsNone(json.loads(out)["recon"])
+
+    def test_dose_in_mg_matches_the_equivalent_mcg(self):
+        args = ["parse", fixture_path("coa_clean.txt"), "--recon-water", "2", "--json"]
+        _c1, mg, _e1 = _run([*args, "--dose", "0.25", "--unit", "mg"])
+        _c2, mcg, _e2 = _run([*args, "--dose", "250"])
+        self.assertEqual(
+            json.loads(mg)["recon"]["result"], json.loads(mcg)["recon"]["result"]
+        )
+
+    def test_no_deliverable_mass_says_so_instead_of_using_the_label(self):
+        # coa_minimal has no mass at all, so the purity math can't run. The block
+        # has to report that and point at the flag, never quietly substitute.
+        code, out, _err = _run(
+            ["parse", fixture_path("coa_minimal.txt"), "--recon-water", "2", "--dose", "250"]
+        )
+        self.assertEqual(code, 0)
+        self.assertIn("Not computed:", out)
+        self.assertIn("--recon-basis labeled", out)
+
+    def test_no_deliverable_mass_json_reports_the_error(self):
+        code, out, _err = _run(
+            ["parse", fixture_path("coa_minimal.txt"), "--recon-water", "2", "--dose", "250",
+             "--json"]
+        )
+        self.assertEqual(code, 0)
+        recon = json.loads(out)["recon"]
+        self.assertIsNone(recon["result"])
+        self.assertIn("no deliverable mass", recon["error"])
+
+    def test_water_without_dose_is_a_usage_error(self):
+        with self.assertRaises(SystemExit) as cm:
+            _run(["parse", fixture_path("coa_clean.txt"), "--recon-water", "2"])
+        self.assertEqual(cm.exception.code, 2)
+
+    def test_dose_without_water_is_a_usage_error(self):
+        with self.assertRaises(SystemExit) as cm:
+            _run(["parse", fixture_path("coa_clean.txt"), "--dose", "250"])
+        self.assertEqual(cm.exception.code, 2)
+
+
+class ParseFailOn(unittest.TestCase):
+    """--fail-on turns a checklist result into an exit code, opt-in, on a new
+    code so the documented 0/1/2 contract is unchanged for existing callers."""
+
+    def test_default_still_exits_zero_on_a_failing_checklist(self):
+        code, _out, _err = _run(["parse", fixture_path("coa_minimal.txt")])
+        self.assertEqual(code, 0)
+
+    def test_fail_mode_returns_three_on_a_fail_flag(self):
+        code, _out, _err = _run(
+            ["parse", fixture_path("coa_minimal.txt"), "--fail-on", "fail"]
+        )
+        self.assertEqual(code, 3)
+
+    def test_fail_mode_ignores_a_warn_only_checklist(self):
+        code, _out, _err = _run(
+            ["parse", fixture_path("coa_low_purity.txt"), "--fail-on", "fail"]
+        )
+        self.assertEqual(code, 0)
+
+    def test_warn_mode_returns_three_on_a_warn_flag(self):
+        code, _out, _err = _run(
+            ["parse", fixture_path("coa_low_purity.txt"), "--fail-on", "warn"]
+        )
+        self.assertEqual(code, 3)
+
+    def test_warn_mode_returns_three_on_a_fail_flag_too(self):
+        code, _out, _err = _run(
+            ["parse", fixture_path("coa_minimal.txt"), "--fail-on", "warn"]
+        )
+        self.assertEqual(code, 3)
+
+    def test_clean_document_exits_zero_in_every_mode(self):
+        for mode in ("never", "warn", "fail"):
+            with self.subTest(mode=mode):
+                code, _out, _err = _run(
+                    ["parse", fixture_path("coa_clean.txt"), "--fail-on", mode]
+                )
+                self.assertEqual(code, 0)
+
+    def test_unreadable_input_still_beats_the_checklist_code(self):
+        # 2 means "couldn't read the input", and that has to win over 3.
+        code, _out, _err = _run(["parse", "no-such-file.txt", "--fail-on", "fail"])
+        self.assertEqual(code, 2)
+
+
 class ReconCommand(unittest.TestCase):
     def test_human_output(self):
         code, out, _err = _run(["recon", "--vial", "5", "--water", "2", "--dose", "250"])

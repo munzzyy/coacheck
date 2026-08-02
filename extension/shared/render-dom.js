@@ -137,12 +137,42 @@
     ]);
   }
 
-  function buildReconSection(coa) {
+  // Which mass the reconstitution math runs on. Pulled out of buildReconSection and exported so
+  // it can be tested on its own: this one choice is the whole difference between a doses-per-vial
+  // figure that agrees with the purity block above it and one that's optimistic by exactly the
+  // shortfall. With no purity result there is no deliverable mass, so the label is all there is.
+  function reconVialMg(coa, purity, basis) {
+    const actual = purity && Number.isFinite(purity.actual_mg) ? purity.actual_mg : null;
+    if (actual === null || basis === "labeled") return coa.mass_mg ?? null;
+    return actual;
+  }
+
+  // The panel says a labeled 5 mg vial really delivers 4.534 mg one block up, so computing
+  // doses per vial off 5 mg in the block below contradicts it, by exactly the shortfall. The
+  // deliverable mass is the default basis; the toggle switches back to the label, and when the
+  // purity math didn't run the section says so instead of quietly using the label as if it had.
+  function buildReconSection(coa, purity) {
     if (coa.mass_mg === null || coa.mass_mg === undefined) {
       return el("div", { style: { marginTop: "10px", color: "#8b98a5", fontSize: "11.5px" } }, [
         "Reconstitution calculator needs a mass/quantity field, which wasn't found in this document.",
       ]);
     }
+
+    const hasActual = !!purity && Number.isFinite(purity.actual_mg);
+    const basisSelect = el("select", null, [
+      hasActual
+        ? el("option", { value: "actual", text: `actual ${purity.actual_mg.toFixed(3)} mg` })
+        : null,
+      el("option", { value: "labeled", text: `labeled ${formatG(coa.mass_mg)} mg` }),
+    ].filter(Boolean));
+    const basisNote = el("div", {
+      style: { color: "#8b98a5", fontSize: "11.5px", marginBottom: "4px" },
+      text: hasActual
+        ? "Doses per vial come off the deliverable mass, not the label."
+        : "Using the labeled mass. The purity math didn't run, so there's no deliverable mass "
+          + "to use instead.",
+    });
+    const vialMg = () => reconVialMg(coa, purity, basisSelect.value);
 
     const waterInput = el("input", {
       type: "number", min: "0", step: "any", placeholder: "water mL",
@@ -169,7 +199,7 @@
       const doseMcg = unitSelect.value === "mg" ? doseRaw * 1000 : doseRaw;
       try {
         const resp = await api.runtime.sendMessage({
-          cmd: "recon", vialMg: coa.mass_mg, waterMl, doseMcg,
+          cmd: "recon", vialMg: vialMg(), waterMl, doseMcg,
         });
         if (!resp || !resp.ok) throw new Error(resp?.error || "recon failed");
         const r = resp.result;
@@ -189,11 +219,14 @@
     waterInput.addEventListener("input", onChange);
     doseInput.addEventListener("input", onChange);
     unitSelect.addEventListener("change", onChange);
+    basisSelect.addEventListener("change", onChange);
 
     return el("div", { style: { marginTop: "10px" } }, [
       el("div", { style: { fontWeight: "700", marginBottom: "4px" }, text: "Reconstitution" }),
+      basisNote,
       el("div", { style: { display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" } }, [
         waterInput, el("span", { text: "water," }), doseInput, unitSelect, el("span", { text: "dose" }),
+        el("span", { text: "from" }), basisSelect,
       ]),
       output,
     ]);
@@ -263,7 +296,7 @@
     children.push(buildFieldsSection(coa));
     children.push(buildPurityBlock(purity, purityError));
     children.push(buildChecklistSection(flags));
-    children.push(buildReconSection(coa));
+    children.push(buildReconSection(coa, purity));
     if (ocrText !== null && ocrText !== undefined) {
       children.push(el("div", { style: { marginTop: "10px" } }, [buildOcrDisclosure(ocrText, empty)]));
     }
@@ -311,5 +344,7 @@
     });
   }
 
-  global.CoacheckRender = { buildResultsPanel, buildErrorPanel, buildLoadingBadge, fieldText };
+  global.CoacheckRender = {
+    buildResultsPanel, buildErrorPanel, buildLoadingBadge, fieldText, reconVialMg,
+  };
 })(typeof window !== "undefined" ? window : this);
