@@ -28,8 +28,10 @@ from .parser import ParsedCoa
 RESEARCH_GRADE_PURITY_THRESHOLD = 98.0
 
 # Purity qualifiers that make the stated number an upper bound rather than a
-# confirmed value - "<98%" says purity is below 98, not that it is 98.
-_UPPER_BOUND_QUALIFIERS = frozenset({"<", "<=", "≤"})
+# confirmed value - "<98%" says purity is below 98, not that it is 98. Public
+# because cli.py also needs to know this before deciding whether to run the
+# purity math off the stated figure.
+UPPER_BOUND_QUALIFIERS = frozenset({"<", "<=", "≤"})
 
 # Lab-name values that are present but don't actually name a lab. Matched
 # against the normalized value (see _is_placeholder_lab), so "N.A.",
@@ -102,7 +104,7 @@ def _check_purity(coa: ParsedCoa) -> Flag:
             f"Purity is stated as {coa.purity_pct:g}%, which is outside the "
             "possible 0-100% range.",
         )
-    if coa.purity_qualifier in _UPPER_BOUND_QUALIFIERS:
+    if coa.purity_qualifier in UPPER_BOUND_QUALIFIERS:
         return Flag(
             "CC-PURITY", Status.WARN,
             "Purity stated only as an upper bound",
@@ -123,6 +125,28 @@ def _check_purity(coa: ParsedCoa) -> Flag:
         "CC-PURITY", Status.PASS,
         "Purity at or above the research-grade line",
         f"Stated purity is {coa.purity_pct:g}%.",
+    )
+
+
+def _check_mass(coa: ParsedCoa) -> Flag:
+    if coa.mass_mg is None:
+        return Flag(
+            "CC-MASS", Status.FAIL,
+            "No mass/quantity found",
+            "The document does not state a mass or quantity anywhere. The "
+            "purity and reconstitution math can't run without it.",
+        )
+    if not math.isfinite(coa.mass_mg) or coa.mass_mg <= 0:
+        return Flag(
+            "CC-MASS", Status.FAIL,
+            "Stated mass is not physically possible",
+            f"Mass is stated as {coa.mass_mg:g} mg, which is outside the "
+            "physically possible range (must be greater than zero).",
+        )
+    return Flag(
+        "CC-MASS", Status.PASS,
+        "Mass/quantity present",
+        f"Mass: {coa.mass_mg:g} mg",
     )
 
 
@@ -239,6 +263,7 @@ def _check_net_content(coa: ParsedCoa) -> Flag:
 # Order here is the order flags are returned in, and the order they render in.
 _CHECKS = (
     _check_purity,
+    _check_mass,
     _check_batch,
     _check_lab,
     _check_method,
@@ -249,5 +274,5 @@ _CHECKS = (
 
 
 def run_checklist(coa: ParsedCoa) -> list[Flag]:
-    """Run every red-flag check against a parsed COA and return all 7 flags."""
+    """Run every red-flag check against a parsed COA and return all 8 flags."""
     return [check(coa) for check in _CHECKS]

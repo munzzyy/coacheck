@@ -132,12 +132,30 @@ function coaWith(overrides) {
   return { ...PARSED_COA_DEFAULTS, ...overrides };
 }
 
-test("runChecklist: returns the 7 stable ids in order", () => {
+test("runChecklist: returns the 8 stable ids in order", () => {
   const flags = runChecklist(coaWith({}));
   assert.deepEqual(
     flags.map((f) => f.id),
-    ["CC-PURITY", "CC-BATCH", "CC-LAB", "CC-METHOD", "CC-DATE", "CC-PURITY-METHOD", "CC-NET"],
+    ["CC-PURITY", "CC-MASS", "CC-BATCH", "CC-LAB", "CC-METHOD", "CC-DATE",
+     "CC-PURITY-METHOD", "CC-NET"],
   );
+});
+
+test("runChecklist: missing mass is a fail", () => {
+  const flags = runChecklist(coaWith({ mass_mg: null }));
+  assert.equal(flags.find((f) => f.id === "CC-MASS").status, Status.FAIL);
+});
+
+test("runChecklist: zero or negative mass is a fail", () => {
+  for (const mass_mg of [0.0, -5.0]) {
+    const flags = runChecklist(coaWith({ mass_mg }));
+    assert.equal(flags.find((f) => f.id === "CC-MASS").status, Status.FAIL);
+  }
+});
+
+test("runChecklist: present mass passes", () => {
+  const flags = runChecklist(coaWith({ mass_mg: 5.0 }));
+  assert.equal(flags.find((f) => f.id === "CC-MASS").status, Status.PASS);
 });
 
 test("runChecklist: missing purity is a fail", () => {

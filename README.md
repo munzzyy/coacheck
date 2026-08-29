@@ -58,6 +58,8 @@ Purity math
 Red-flag checklist
   [PASS] CC-PURITY        Purity at or above the research-grade line
          Stated purity is 99.1%.
+  [PASS] CC-MASS          Mass/quantity present
+         Mass: 5 mg
   [PASS] CC-BATCH         Batch/lot number present
          Batch/lot: RC118-20260214-A
   [PASS] CC-LAB           Testing laboratory named
@@ -71,7 +73,7 @@ Red-flag checklist
   [PASS] CC-NET           Net peptide content is within a plausible range
          Net peptide content: 91.5%
 
-0 fail, 0 warn, 7 pass  (7 checks)
+0 fail, 0 warn, 8 pass  (8 checks)
 ```
 
 `coacheck parse` reads from a file, or from stdin if you leave the path off:
@@ -166,9 +168,9 @@ engine is pinned to match the Python package exactly.
   exact formulas.
 - Computes actual deliverable peptide mass from labeled mass, purity, and (if stated) net
   peptide content, plus the shortfall against the label in both mg and percent.
-- Runs a 7-item red-flag checklist (`CC-PURITY`, `CC-BATCH`, `CC-LAB`, `CC-METHOD`, `CC-DATE`,
-  `CC-PURITY-METHOD`, `CC-NET`), each a stable id with a pass/warn/fail status, documented in
-  [docs/checks.md](docs/checks.md).
+- Runs an 8-item red-flag checklist (`CC-PURITY`, `CC-MASS`, `CC-BATCH`, `CC-LAB`, `CC-METHOD`,
+  `CC-DATE`, `CC-PURITY-METHOD`, `CC-NET`), each a stable id with a pass/warn/fail status,
+  documented in [docs/checks.md](docs/checks.md).
 - Computes reconstitution math: concentration, mL to draw, units on a U-100 insulin syringe, and
   doses per vial, from a vial mass, diluent volume, and a dose you supply. Run off a parsed COA
   it uses the deliverable mass, not the labeled one.

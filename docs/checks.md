@@ -62,6 +62,13 @@ present but below `RESEARCH_GRADE_PURITY_THRESHOLD` (98%, `coacheck/redflags.py`
 convention some vendors use for "research grade" material, not a clinical or safety threshold.
 PASS at or above that line.
 
+### CC-MASS
+
+Whether a usable mass/quantity figure is present. FAIL if no mass is found anywhere, or if the
+stated value isn't physically possible (must be greater than zero). The purity and
+reconstitution math can't run without a mass, so this check exists so a missing mass shows up
+on the checklist itself instead of only as a "not computed" note further down the report.
+
 ### CC-BATCH
 
 WARN if no batch or lot number is found. A result that isn't tied to a specific production run
@@ -95,7 +102,7 @@ physically possible 0-100% range. PASS otherwise, including when the field is ab
 
 ## What a clean checklist means
 
-Seven PASS results mean nothing checked here is missing or physically impossible. It is not a
+Eight PASS results mean nothing checked here is missing or physically impossible. It is not a
 verdict on whether the document is genuine - a fabricated COA can fill in every field with
 invented numbers, and a clean pass from this tool alone should never be read as confirmation
 that a document is real. Likewise, a flagged document is not proof of anything - some legitimate

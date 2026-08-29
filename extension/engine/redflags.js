@@ -16,8 +16,9 @@
 export const RESEARCH_GRADE_PURITY_THRESHOLD = 98.0;
 
 // Purity qualifiers that make the stated number an upper bound rather than a confirmed value -
-// "<98%" says purity is below 98, not that it is 98.
-const UPPER_BOUND_QUALIFIERS = new Set(["<", "<=", "≤"]);
+// "<98%" says purity is below 98, not that it is 98. Exported because background.js also
+// needs to know this before deciding whether to run the purity math off the stated figure.
+export const UPPER_BOUND_QUALIFIERS = new Set(["<", "<=", "≤"]);
 
 // Lab-name values that are present but don't actually name a lab. Matched against the
 // normalized value (see isPlaceholderLab), so "N.A.", "In-House Lab" and the like are caught
@@ -42,7 +43,7 @@ export const Status = Object.freeze({
 // trailing decimal point trimmed. Only the detail strings below use this, but the parity
 // checker compares those strings verbatim against the real Python output, so it has to
 // match exactly for every value the fixtures exercise, not just look close.
-function formatG(value) {
+export function formatG(value) {
   if (!Number.isFinite(value)) {
     return value > 0 ? "inf" : value < 0 ? "-inf" : "nan";
   }
@@ -142,6 +143,30 @@ function checkPurity(coa) {
     id: "CC-PURITY", status: Status.PASS,
     title: "Purity at or above the research-grade line",
     detail: `Stated purity is ${formatG(coa.purity_pct)}%.`,
+  };
+}
+
+function checkMass(coa) {
+  if (coa.mass_mg === null) {
+    return {
+      id: "CC-MASS", status: Status.FAIL,
+      title: "No mass/quantity found",
+      detail: "The document does not state a mass or quantity anywhere. The "
+        + "purity and reconstitution math can't run without it.",
+    };
+  }
+  if (!Number.isFinite(coa.mass_mg) || coa.mass_mg <= 0) {
+    return {
+      id: "CC-MASS", status: Status.FAIL,
+      title: "Stated mass is not physically possible",
+      detail: `Mass is stated as ${formatG(coa.mass_mg)} mg, which is outside the `
+        + "physically possible range (must be greater than zero).",
+    };
+  }
+  return {
+    id: "CC-MASS", status: Status.PASS,
+    title: "Mass/quantity present",
+    detail: `Mass: ${formatG(coa.mass_mg)} mg`,
   };
 }
 
@@ -267,6 +292,7 @@ function checkNetContent(coa) {
 // Order here is the order flags are returned in, and the order they render in.
 const CHECKS = [
   checkPurity,
+  checkMass,
   checkBatch,
   checkLab,
   checkMethod,
@@ -276,7 +302,7 @@ const CHECKS = [
 ];
 
 /**
- * Run every red-flag check against a parsed COA and return all 7 flags.
+ * Run every red-flag check against a parsed COA and return all 8 flags.
  * @param {object} coa - a ParsedCoa-shaped object, see parser.js.
  * @returns {{id: string, status: string, title: string, detail: string}[]}
  */

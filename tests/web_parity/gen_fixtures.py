@@ -29,7 +29,7 @@ from coacheck._serialize import to_dict  # noqa: E402
 from coacheck.parser import ParsedCoa, parse_coa  # noqa: E402
 from coacheck.purity import compute_purity  # noqa: E402
 from coacheck.recon import compute_recon  # noqa: E402
-from coacheck.redflags import run_checklist  # noqa: E402
+from coacheck.redflags import UPPER_BOUND_QUALIFIERS, run_checklist  # noqa: E402
 
 
 def run_parse_case(case: dict) -> dict:
@@ -48,6 +48,12 @@ def run_parse_case(case: dict) -> dict:
         purity_error = "no mass/quantity (mg) found in the document"
     elif coa.purity_pct is None:
         purity_error = "no HPLC purity percentage found in the document"
+    elif coa.purity_qualifier in UPPER_BOUND_QUALIFIERS:
+        purity_error = (
+            f"purity is stated only as an upper bound ({coa.purity_qualifier}"
+            f"{coa.purity_pct:g}%), so a deliverable-mass figure would overstate "
+            "confidence - the checklist's CC-PURITY flag explains why"
+        )
     else:
         try:
             purity = compute_purity(coa.mass_mg, coa.purity_pct, coa.net_content_pct)

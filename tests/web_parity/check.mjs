@@ -24,7 +24,9 @@ const CASES_PATH = path.join(HERE, "cases.json");
 const { parseCoa } = await import(path.join(ENGINE_DIR, "parser.js"));
 const { computePurity } = await import(path.join(ENGINE_DIR, "purity.js"));
 const { computeRecon } = await import(path.join(ENGINE_DIR, "recon.js"));
-const { runChecklist } = await import(path.join(ENGINE_DIR, "redflags.js"));
+const { formatG, runChecklist, UPPER_BOUND_QUALIFIERS } = await import(
+  path.join(ENGINE_DIR, "redflags.js")
+);
 
 // Every ParsedCoa field, defaulted to null - mirrors the Python dataclass's defaults so a
 // redflags case's partial `coa` object in cases.json fills in the rest the same way
@@ -49,6 +51,10 @@ function runParseCase(c) {
     purityError = "no mass/quantity (mg) found in the document";
   } else if (coa.purity_pct === null) {
     purityError = "no HPLC purity percentage found in the document";
+  } else if (UPPER_BOUND_QUALIFIERS.has(coa.purity_qualifier)) {
+    purityError = `purity is stated only as an upper bound (${coa.purity_qualifier}`
+      + `${formatG(coa.purity_pct)}%), so a deliverable-mass figure would overstate `
+      + "confidence - the checklist's CC-PURITY flag explains why";
   } else {
     try {
       purity = computePurity(coa.mass_mg, coa.purity_pct, coa.net_content_pct);

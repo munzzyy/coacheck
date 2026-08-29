@@ -12,7 +12,7 @@ import { api } from "./shared/browser-api.js";
 import { parseCoa } from "./engine/parser.js";
 import { computePurity } from "./engine/purity.js";
 import { computeRecon } from "./engine/recon.js";
-import { runChecklist } from "./engine/redflags.js";
+import { formatG, runChecklist, UPPER_BOUND_QUALIFIERS } from "./engine/redflags.js";
 import { recognizeRegion } from "./ocr/recognize.js";
 
 const OFFSCREEN_URL = "offscreen/offscreen.html";
@@ -56,6 +56,10 @@ function buildParseResult(coaText) {
     purityError = "no mass/quantity (mg) found in the document";
   } else if (coa.purity_pct === null) {
     purityError = "no HPLC purity percentage found in the document";
+  } else if (UPPER_BOUND_QUALIFIERS.has(coa.purity_qualifier)) {
+    purityError = `purity is stated only as an upper bound (${coa.purity_qualifier}`
+      + `${formatG(coa.purity_pct)}%), so a deliverable-mass figure would overstate `
+      + "confidence - the checklist's CC-PURITY flag explains why";
   } else {
     try {
       purity = computePurity(coa.mass_mg, coa.purity_pct, coa.net_content_pct);

@@ -22,12 +22,12 @@ def _flags_by_id(coa):
 
 
 class ChecklistShape(unittest.TestCase):
-    def test_returns_seven_flags_with_stable_ids(self):
+    def test_returns_eight_flags_with_stable_ids(self):
         flags = run_checklist(CLEAN)
         ids = [f.id for f in flags]
         self.assertEqual(
             ids,
-            ["CC-PURITY", "CC-BATCH", "CC-LAB", "CC-METHOD", "CC-DATE",
+            ["CC-PURITY", "CC-MASS", "CC-BATCH", "CC-LAB", "CC-METHOD", "CC-DATE",
              "CC-PURITY-METHOD", "CC-NET"],
         )
 
@@ -89,6 +89,24 @@ class PurityCheck(unittest.TestCase):
         flag = _flags_by_id(ParsedCoa(purity_pct=1_000_000.0))["CC-PURITY"]
         self.assertEqual(flag.status, Status.FAIL)
         self.assertIn("1e+06", flag.detail)
+
+
+class MassCheck(unittest.TestCase):
+    def test_missing_mass_is_fail(self):
+        flag = _flags_by_id(ParsedCoa(mass_mg=None))["CC-MASS"]
+        self.assertEqual(flag.status, Status.FAIL)
+
+    def test_zero_mass_is_fail(self):
+        flag = _flags_by_id(ParsedCoa(mass_mg=0.0))["CC-MASS"]
+        self.assertEqual(flag.status, Status.FAIL)
+
+    def test_negative_mass_is_fail(self):
+        flag = _flags_by_id(ParsedCoa(mass_mg=-5.0))["CC-MASS"]
+        self.assertEqual(flag.status, Status.FAIL)
+
+    def test_present_mass_is_pass(self):
+        flag = _flags_by_id(ParsedCoa(mass_mg=5.0))["CC-MASS"]
+        self.assertEqual(flag.status, Status.PASS)
 
 
 class BatchCheck(unittest.TestCase):

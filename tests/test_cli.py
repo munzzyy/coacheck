@@ -33,7 +33,7 @@ class ParseCommand(unittest.TestCase):
         self.assertEqual(payload["tool"], "coacheck")
         self.assertEqual(payload["fields"]["product_name"], "Research Compound RC-118")
         self.assertIsNotNone(payload["purity"])
-        self.assertEqual(len(payload["flags"]), 7)
+        self.assertEqual(len(payload["flags"]), 8)
 
     def test_reads_from_stdin_when_no_file_given(self):
         text = fixture_text("coa_missing_lab.txt")
@@ -53,6 +53,20 @@ class ParseCommand(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertIn("[FAIL] CC-PURITY", out)
         self.assertIn("Not computed", out)
+
+    def test_upper_bound_purity_skips_the_math_with_a_caveat(self):
+        code, out, _err = _run(["parse", fixture_path("coa_purity_upper_bound.txt")])
+        self.assertEqual(code, 0)
+        self.assertIn("Not computed: purity is stated only as an upper bound", out)
+        self.assertIn("would overstate", out)
+        self.assertIn("[WARN] CC-PURITY", out)
+
+    def test_upper_bound_purity_json_reports_the_error(self):
+        code, out, _err = _run(["parse", fixture_path("coa_purity_upper_bound.txt"), "--json"])
+        self.assertEqual(code, 0)
+        payload = json.loads(out)
+        self.assertIsNone(payload["purity"])
+        self.assertIn("upper bound", payload["purity_error"])
 
     def test_implausible_net_content_fixture_reports_fail(self):
         code, out, _err = _run(["parse", fixture_path("coa_implausible_net.txt")])
