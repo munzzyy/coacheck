@@ -98,7 +98,9 @@ double up on the same missing field.
 
 Only fires on the net peptide content figure, and only when one is present (it's an optional
 field on most COAs; absence is not itself a flag). FAIL if the stated value is outside the
-physically possible 0-100% range. PASS otherwise, including when the field is absent.
+physically possible 0-100% range. WARN if the value is stated only as an upper bound (`<70%` or
+`NMT 70%`). The real figure could be anything under that, so the purity math is skipped and the
+report says why. PASS otherwise, including when the field is absent.
 
 ## What a clean checklist means
 

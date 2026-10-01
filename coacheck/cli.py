@@ -16,9 +16,9 @@ import sys
 
 from . import __version__
 from .parser import ParsedCoa, parse_coa
-from .purity import PurityResult, compute_purity
+from .purity import PurityResult, purity_from_coa
 from .recon import ReconResult, compute_recon
-from .redflags import Flag, Status, UPPER_BOUND_QUALIFIERS, run_checklist
+from .redflags import Flag, Status, run_checklist
 from .report import render_parse_human, render_parse_json, render_recon_human, render_recon_json
 
 # Defense in depth ahead of parser.py's own (smaller) character cap: reject
@@ -56,25 +56,7 @@ def cmd_parse(args: argparse.Namespace) -> int:
         return 1
 
     flags = run_checklist(coa)
-
-    purity = None
-    purity_error = None
-    if coa.mass_mg is None:
-        purity_error = "no mass/quantity (mg) found in the document"
-    elif coa.purity_pct is None:
-        purity_error = "no HPLC purity percentage found in the document"
-    elif coa.purity_qualifier in UPPER_BOUND_QUALIFIERS:
-        purity_error = (
-            f"purity is stated only as an upper bound ({coa.purity_qualifier}"
-            f"{coa.purity_pct:g}%), so a deliverable-mass figure would overstate "
-            "confidence - the checklist's CC-PURITY flag explains why"
-        )
-    else:
-        try:
-            purity = compute_purity(coa.mass_mg, coa.purity_pct, coa.net_content_pct)
-        except ValueError as e:
-            purity_error = str(e)
-
+    purity, purity_error = purity_from_coa(coa)
     recon, recon_error, recon_basis = _parse_recon(args, coa, purity, purity_error)
 
     if args.json:

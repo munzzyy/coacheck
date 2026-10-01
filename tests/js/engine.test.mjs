@@ -10,7 +10,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ENGINE_DIR = path.join(HERE, "..", "..", "extension", "engine");
 
 const { parseCoa, MAX_COA_TEXT_CHARS } = await import(path.join(ENGINE_DIR, "parser.js"));
-const { computePurity } = await import(path.join(ENGINE_DIR, "purity.js"));
+const { computePurity, purityFromCoa } = await import(path.join(ENGINE_DIR, "purity.js"));
 const { computeRecon } = await import(path.join(ENGINE_DIR, "recon.js"));
 const { runChecklist, RESEARCH_GRADE_PURITY_THRESHOLD, Status } = await import(
   path.join(ENGINE_DIR, "redflags.js")
@@ -271,4 +271,30 @@ test("runChecklist: a missing purity claim makes CC-PURITY-METHOD pass, not warn
 test("runChecklist: net content over 100 fails", () => {
   const flags = runChecklist(coaWith({ net_content_pct: 104.0 }));
   assert.equal(flags.find((f) => f.id === "CC-NET").status, Status.FAIL);
+});
+
+test("runChecklist: an upper-bound net content warns", () => {
+  for (const qualifier of ["<", "<=", "≤"]) {
+    const flags = runChecklist(coaWith({ net_content_pct: 70.0, net_content_qualifier: qualifier }));
+    assert.equal(flags.find((f) => f.id === "CC-NET").status, Status.WARN, qualifier);
+  }
+});
+
+test("purityFromCoa: an upper-bound net content skips the math", () => {
+  const coa = coaWith({
+    mass_mg: 5.0, purity_pct: 99.1, net_content_pct: 70.0, net_content_qualifier: "<",
+  });
+  const [purity, error] = purityFromCoa(coa);
+  assert.equal(purity, null);
+  assert.match(error, /net peptide content/);
+  assert.match(error, /upper bound/);
+});
+
+test("purityFromCoa: a lower-bound net content still computes", () => {
+  const coa = coaWith({
+    mass_mg: 5.0, purity_pct: 99.1, net_content_pct: 80.0, net_content_qualifier: ">=",
+  });
+  const [purity, error] = purityFromCoa(coa);
+  assert.equal(error, null);
+  assert.ok(Math.abs(purity.actual_mg - 3.964) < 1e-9);
 });

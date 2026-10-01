@@ -38,6 +38,9 @@ import math
 from dataclasses import dataclass
 from typing import Optional
 
+from .parser import ParsedCoa
+from .redflags import UPPER_BOUND_QUALIFIERS
+
 
 @dataclass(frozen=True)
 class PurityResult:
@@ -101,3 +104,35 @@ def compute_purity(
         shortfall_mg=shortfall_mg,
         shortfall_pct=shortfall_pct,
     )
+
+
+def _upper_bound_error(name: str, qualifier: str, value: float, flag_id: str) -> str:
+    return (
+        f"{name} is stated only as an upper bound ({qualifier}{value:g}%), so a "
+        "deliverable-mass figure would overstate confidence - the checklist's "
+        f"{flag_id} flag explains why"
+    )
+
+
+def purity_from_coa(coa: ParsedCoa) -> tuple[Optional[PurityResult], Optional[str]]:
+    """The purity math for a parsed COA, or (None, the reason it wasn't run).
+
+    The CLI, the extension and the parity gate all go through this, so the
+    rule for when the math runs lives in one place per engine.
+    """
+    if coa.mass_mg is None:
+        return None, "no mass/quantity (mg) found in the document"
+    if coa.purity_pct is None:
+        return None, "no HPLC purity percentage found in the document"
+    if coa.purity_qualifier in UPPER_BOUND_QUALIFIERS:
+        return None, _upper_bound_error(
+            "purity", coa.purity_qualifier, coa.purity_pct, "CC-PURITY"
+        )
+    if coa.net_content_pct is not None and coa.net_content_qualifier in UPPER_BOUND_QUALIFIERS:
+        return None, _upper_bound_error(
+            "net peptide content", coa.net_content_qualifier, coa.net_content_pct, "CC-NET"
+        )
+    try:
+        return compute_purity(coa.mass_mg, coa.purity_pct, coa.net_content_pct), None
+    except ValueError as e:
+        return None, str(e)

@@ -217,6 +217,22 @@ class NetContentCheck(unittest.TestCase):
         flag = _flags_by_id(ParsedCoa(net_content_pct=88.5))["CC-NET"]
         self.assertEqual(flag.status, Status.PASS)
 
+    def test_upper_bound_net_content_is_warn(self):
+        for qualifier in ("<", "<=", "≤"):
+            with self.subTest(qualifier=qualifier):
+                coa = ParsedCoa(net_content_pct=70.0, net_content_qualifier=qualifier)
+                flag = _flags_by_id(coa)["CC-NET"]
+                self.assertEqual(flag.status, Status.WARN)
+                self.assertIn("upper bound", flag.detail)
+
+    def test_lower_bound_net_content_is_pass(self):
+        coa = ParsedCoa(net_content_pct=80.0, net_content_qualifier=">=")
+        self.assertEqual(_flags_by_id(coa)["CC-NET"].status, Status.PASS)
+
+    def test_impossible_upper_bound_net_content_is_still_fail(self):
+        coa = ParsedCoa(net_content_pct=150.0, net_content_qualifier="<")
+        self.assertEqual(_flags_by_id(coa)["CC-NET"].status, Status.FAIL)
+
 
 if __name__ == "__main__":
     unittest.main()

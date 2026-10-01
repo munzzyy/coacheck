@@ -27,10 +27,10 @@ from .parser import ParsedCoa
 # Change it here if you want to check against a different line.
 RESEARCH_GRADE_PURITY_THRESHOLD = 98.0
 
-# Purity qualifiers that make the stated number an upper bound rather than a
-# confirmed value - "<98%" says purity is below 98, not that it is 98. Public
-# because cli.py also needs to know this before deciding whether to run the
-# purity math off the stated figure.
+# Qualifiers that make the stated number an upper bound rather than a confirmed
+# value - "<98%" says purity is below 98, not that it is 98. Public because
+# purity.py also needs to know this before deciding whether to run the purity
+# math off the stated figure.
 UPPER_BOUND_QUALIFIERS = frozenset({"<", "<=", "≤"})
 
 # Lab-name values that are present but don't actually name a lab. Matched
@@ -252,6 +252,14 @@ def _check_net_content(coa: ParsedCoa) -> Flag:
             "Net peptide content is not physically plausible",
             f"Net peptide content is stated as {value:g}%, which is outside "
             "the physically possible 0-100% range.",
+        )
+    if coa.net_content_qualifier in UPPER_BOUND_QUALIFIERS:
+        return Flag(
+            "CC-NET", Status.WARN,
+            "Net peptide content stated only as an upper bound",
+            f"Net peptide content is {coa.net_content_qualifier}{value:g}%, given "
+            "only as an upper bound rather than a confirmed value, so the "
+            "deliverable-mass math can't run on it.",
         )
     return Flag(
         "CC-NET", Status.PASS,

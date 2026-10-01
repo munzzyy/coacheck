@@ -2,7 +2,8 @@
 
 import unittest
 
-from coacheck.purity import compute_purity
+from coacheck.parser import ParsedCoa
+from coacheck.purity import compute_purity, purity_from_coa
 
 
 class HandVerifiedMath(unittest.TestCase):
@@ -95,6 +96,43 @@ class InputValidation(unittest.TestCase):
         r = compute_purity(5.0, 98.0)
         with self.assertRaises(Exception):
             r.actual_mg = 0.0
+
+
+class PurityFromCoa(unittest.TestCase):
+    """The one gate that decides whether the purity math runs on a parsed COA."""
+
+    def test_upper_bound_net_content_skips_the_math(self):
+        for qualifier in ("<", "<=", "≤"):
+            with self.subTest(qualifier=qualifier):
+                coa = ParsedCoa(mass_mg=5.0, purity_pct=99.1, net_content_pct=70.0,
+                                net_content_qualifier=qualifier)
+                result, error = purity_from_coa(coa)
+                self.assertIsNone(result)
+                self.assertIn("net peptide content", error)
+                self.assertIn("upper bound", error)
+                self.assertIn("CC-NET", error)
+
+    def test_lower_bound_net_content_still_computes(self):
+        coa = ParsedCoa(mass_mg=5.0, purity_pct=99.1, net_content_pct=80.0,
+                        net_content_qualifier=">=")
+        result, error = purity_from_coa(coa)
+        self.assertIsNone(error)
+        self.assertAlmostEqual(result.actual_mg, 3.964, places=9)
+
+    def test_upper_bound_purity_message_is_unchanged(self):
+        coa = ParsedCoa(mass_mg=5.0, purity_pct=98.5, purity_qualifier="<")
+        self.assertEqual(
+            purity_from_coa(coa),
+            (None, "purity is stated only as an upper bound (<98.5%), so a "
+                   "deliverable-mass figure would overstate confidence - the "
+                   "checklist's CC-PURITY flag explains why"),
+        )
+
+    def test_missing_mass_and_purity_reasons(self):
+        self.assertEqual(purity_from_coa(ParsedCoa(purity_pct=99.0))[1],
+                         "no mass/quantity (mg) found in the document")
+        self.assertEqual(purity_from_coa(ParsedCoa(mass_mg=5.0))[1],
+                         "no HPLC purity percentage found in the document")
 
 
 if __name__ == "__main__":

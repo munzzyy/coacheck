@@ -89,6 +89,9 @@
   { "name": "parse_weight_in_g_per_mol_is_not_the_vial_mass", "type": "parse", "text": "Weight: 1419.53 g/mol\nPurity: 99.1%\nQuantity: 5 mg\n" },
   { "name": "parse_mass_in_g_per_mol_is_not_the_vial_mass", "type": "parse", "text": "Mass: 1419.5 g/mol\nPurity: 99.1%\nNet Weight: 5 mg\n" },
   { "name": "parse_net_peptide_content_without_percent_sign", "type": "parse", "text": "Net Peptide Content: 82.3\n" },
+  { "name": "parse_upper_bound_net_content_skips_the_math", "type": "parse", "text": "Purity: 99.1%\nNet Peptide Content: <70%\nQuantity: 5 mg\nMethod: HPLC\n" },
+  { "name": "parse_nmt_net_content_skips_the_math", "type": "parse", "text": "Purity: 99.1%\nNet Peptide Content: NMT 70%\nQuantity: 5 mg\nMethod: HPLC\n" },
+  { "name": "parse_lower_bound_net_content_still_computes", "type": "parse", "text": "Purity: 99.1%\nNet Peptide Content: >=80%\nQuantity: 5 mg\n" },
   { "name": "parse_spelled_out_separator_beats_the_header_guard", "type": "parse", "text": "Method: Result\n" },
   {
     "name": "parse_two_fields_on_one_line",
@@ -212,6 +215,8 @@
   { "name": "redflags_real_lab_with_stem_word_passes", "type": "redflags", "coa": { "lab_name": "Private Analytics" } },
   { "name": "redflags_purity_upper_bound_warn", "type": "redflags", "coa": { "purity_pct": 99.0, "purity_qualifier": "<" } },
   { "name": "redflags_purity_less_equal_upper_bound_warn", "type": "redflags", "coa": { "purity_pct": 97.0, "purity_qualifier": "<=" } },
+  { "name": "redflags_net_content_upper_bound_warn", "type": "redflags", "coa": { "net_content_pct": 70.0, "net_content_qualifier": "<" } },
+  { "name": "redflags_net_content_lower_bound_pass", "type": "redflags", "coa": { "net_content_pct": 80.0, "net_content_qualifier": ">=" } },
   { "name": "redflags_purity_impossible_1e6_formatg", "type": "redflags", "coa": { "purity_pct": 1000000.0 } },
   { "name": "redflags_purity_tiny_1e-7_formatg", "type": "redflags", "coa": { "purity_pct": 0.0000001 } },
   { "name": "redflags_net_content_1e6_formatg", "type": "redflags", "coa": { "net_content_pct": 1000000.0 } },

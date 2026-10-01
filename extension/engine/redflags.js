@@ -15,9 +15,9 @@
 // claim that material below it is unsafe or fake.
 export const RESEARCH_GRADE_PURITY_THRESHOLD = 98.0;
 
-// Purity qualifiers that make the stated number an upper bound rather than a confirmed value -
-// "<98%" says purity is below 98, not that it is 98. Exported because background.js also
-// needs to know this before deciding whether to run the purity math off the stated figure.
+// Qualifiers that make the stated number an upper bound rather than a confirmed value - "<98%"
+// says purity is below 98, not that it is 98. Exported because purity.js also needs to know
+// this before deciding whether to run the purity math off the stated figure.
 export const UPPER_BOUND_QUALIFIERS = new Set(["<", "<=", "≤"]);
 
 // Lab-name values that are present but don't actually name a lab. Matched against the
@@ -280,6 +280,15 @@ function checkNetContent(coa) {
       title: "Net peptide content is not physically plausible",
       detail: `Net peptide content is stated as ${formatG(value)}%, which is outside `
         + "the physically possible 0-100% range.",
+    };
+  }
+  if (UPPER_BOUND_QUALIFIERS.has(coa.net_content_qualifier)) {
+    return {
+      id: "CC-NET", status: Status.WARN,
+      title: "Net peptide content stated only as an upper bound",
+      detail: `Net peptide content is ${coa.net_content_qualifier}${formatG(value)}%, given `
+        + "only as an upper bound rather than a confirmed value, so the "
+        + "deliverable-mass math can't run on it.",
     };
   }
   return {

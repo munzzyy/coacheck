@@ -26,6 +26,8 @@
 // are not rejected here - they're computed through and reported as-is, because catching
 // "not physically possible" is the checklist's job (see redflags.js), not this module's.
 
+import { formatG, UPPER_BOUND_QUALIFIERS } from "./redflags.js";
+
 function requireFiniteNonNegative(name, value) {
   if (!Number.isFinite(value)) {
     throw new RangeError(`${name} must be a finite number`);
@@ -74,4 +76,34 @@ export function computePurity(labeledMg, purityPct, netContentPct = null) {
     shortfall_mg: shortfallMg,
     shortfall_pct: shortfallPct,
   };
+}
+
+function upperBoundError(name, qualifier, value, flagId) {
+  return `${name} is stated only as an upper bound (${qualifier}${formatG(value)}%), so a `
+    + "deliverable-mass figure would overstate confidence - the checklist's "
+    + `${flagId} flag explains why`;
+}
+
+/**
+ * The purity math for a parsed COA, or [null, the reason it wasn't run]. background.js and
+ * the parity gate both go through this, so the rule for when the math runs lives in one place.
+ * @param {object} coa - a ParsedCoa-shaped object, see parser.js.
+ * @returns {[?object, ?string]}
+ */
+export function purityFromCoa(coa) {
+  if (coa.mass_mg === null) return [null, "no mass/quantity (mg) found in the document"];
+  if (coa.purity_pct === null) return [null, "no HPLC purity percentage found in the document"];
+  if (UPPER_BOUND_QUALIFIERS.has(coa.purity_qualifier)) {
+    return [null, upperBoundError("purity", coa.purity_qualifier, coa.purity_pct, "CC-PURITY")];
+  }
+  if (coa.net_content_pct !== null && UPPER_BOUND_QUALIFIERS.has(coa.net_content_qualifier)) {
+    return [null, upperBoundError(
+      "net peptide content", coa.net_content_qualifier, coa.net_content_pct, "CC-NET",
+    )];
+  }
+  try {
+    return [computePurity(coa.mass_mg, coa.purity_pct, coa.net_content_pct), null];
+  } catch (err) {
+    return [null, err.message];
+  }
 }

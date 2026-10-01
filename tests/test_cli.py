@@ -107,6 +107,31 @@ class ParseCommand(unittest.TestCase):
         purity_flag = next(f for f in payload["flags"] if f["id"] == "CC-PURITY")
         self.assertEqual(purity_flag["status"], "warn")
 
+    def test_upper_bound_net_content_skips_the_math(self):
+        for bound in ("<70%", "NMT 70%"):
+            with self.subTest(bound=bound):
+                text = f"Purity: 99.1%\nNet Peptide Content: {bound}\nQuantity: 5 mg\nMethod: HPLC\n"
+                with mock.patch.object(cli.sys, "stdin") as stdin:
+                    stdin.buffer.read.return_value = text.encode("utf-8")
+                    code, out, _err = _run(["parse", "--json"])
+                self.assertEqual(code, 0)
+                payload = json.loads(out)
+                self.assertIsNone(payload["purity"])
+                self.assertIn("net peptide content", payload["purity_error"])
+                self.assertIn("upper bound", payload["purity_error"])
+                net_flag = next(f for f in payload["flags"] if f["id"] == "CC-NET")
+                self.assertEqual(net_flag["status"], "warn")
+
+    def test_upper_bound_net_content_refuses_the_actual_recon_basis(self):
+        text = "Purity: 99.1%\nNet Peptide Content: <70%\nQuantity: 5 mg\nMethod: HPLC\n"
+        with mock.patch.object(cli.sys, "stdin") as stdin:
+            stdin.buffer.read.return_value = text.encode("utf-8")
+            code, out, _err = _run(["parse", "--recon-water", "2", "--dose", "250", "--json"])
+        self.assertEqual(code, 0)
+        recon = json.loads(out)["recon"]
+        self.assertIsNone(recon["result"])
+        self.assertIn("--recon-basis labeled", recon["error"])
+
     def test_oversized_stdin_input_errors_cleanly(self):
         huge = b"x" * (cli.MAX_INPUT_BYTES + 1)
         with mock.patch.object(cli.sys, "stdin") as stdin:
