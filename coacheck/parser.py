@@ -37,7 +37,9 @@ MAX_COA_TEXT_CHARS = 100_000
 # OCR of a printed COA turns plenty of hyphens into a long dash, so those count
 # as separators too.
 _LONG_DASHES = chr(0x2013) + chr(0x2014)
-_SEP = r"(?::|=|(?<=\s)[-" + _LONG_DASHES + r"])\s*"
+# A dot leader ("Purity (HPLC) ...... 99.3%") separates too. The lookahead keeps
+# it from giving back a dot to the value when nothing follows the leader.
+_SEP = r"(?::|=|(?<=\s)[-" + _LONG_DASHES + r"]|\.{2,}(?!\.))\s*"
 
 # The same characters, for the column-gap test in _segments below.
 _SEP_CHARS = ":=-" + _LONG_DASHES
@@ -134,9 +136,16 @@ _PRODUCT_PATTERNS = [
 # "(?:\([^)]*\)\s*)?" rather than "(?:\([^)]*\))?\s*") so there are never two
 # free-floating \s* runs on either side of an empty-matchable group - that
 # adjacency is what makes the scan quadratic on a long run of whitespace.
+# A method written after the label ("Purity by HPLC", "Purity, RP-HPLC"). A
+# fixed list rather than any word, so both engines agree on case folding.
+_PURITY_METHOD = r"(?:rp-?)?(?:u?hplc|uplc|lc)(?:-?(?:ms|uv))?"
+
 _PURITY_PATTERNS = [
     re.compile(
-        r"^(?:hplc\s+)?purity\s*(?:\([^)]*\)\s*)?" + _SEP + _PCT_VALUE, re.IGNORECASE
+        r"^(?:peptide\s+)?(?:hplc\s+)?purity\s*"
+        r"(?:\([^)]*\)\s*|\[[^\]]*\]\s*|(?:by\s+|,\s*)" + _PURITY_METHOD + r"\s*)?"
+        + _SEP + _PCT_VALUE,
+        re.IGNORECASE,
     ),
 ]
 
@@ -159,7 +168,7 @@ _MASS_PATTERNS = [
 
 # "(?:\s*-)?" rather than "\s*-?" for the hyphenated spellings ("Batch-No"):
 # an optional single character between two \s* runs is the quadratic shape again.
-_BATCH_LABEL_TAIL = r"(?:\s*-)?\s*(?:(?:no\.?|nr\.?|number)\s*)?"
+_BATCH_LABEL_TAIL = r"(?:\s*-)?\s*(?:(?:no\.?|nr\.?|number|#|code|id)\s*)?"
 
 # A batch number can carry internal spaces ("RC 118 A"). The old \S+ capture cut
 # it off at the first one; the value now runs to the end of the segment, and
@@ -171,9 +180,9 @@ _BATCH_PATTERNS = [
 ]
 
 _DATE_PATTERNS = [
-    re.compile(r"^test\s*date\s*" + _SEP + r"(.+)$", re.IGNORECASE),
+    re.compile(r"^test(?:ing)?\s*date\s*" + _SEP + r"(.+)$", re.IGNORECASE),
     re.compile(r"^date\s*tested\s*" + _SEP + r"(.+)$", re.IGNORECASE),
-    re.compile(r"^date\s*of\s*analysis\s*" + _SEP + r"(.+)$", re.IGNORECASE),
+    re.compile(r"^date\s*of\s*(?:analysis|test(?:ing)?)\s*" + _SEP + r"(.+)$", re.IGNORECASE),
     re.compile(r"^analysis\s*date\s*" + _SEP + r"(.+)$", re.IGNORECASE),
     re.compile(r"^report\s*date\s*" + _SEP + r"(.+)$", re.IGNORECASE),
     re.compile(r"^coa\s*date\s*" + _SEP + r"(.+)$", re.IGNORECASE),
@@ -189,6 +198,7 @@ _METHOD_PATTERNS = [
 
 _LAB_PATTERNS = [
     re.compile(r"^testing\s*laboratory\s*" + _SEP + r"(.+)$", re.IGNORECASE),
+    re.compile(r"^laboratory\s*name\s*" + _SEP + r"(.+)$", re.IGNORECASE),
     re.compile(r"^test(?:ing)?\s*lab\s*" + _SEP + r"(.+)$", re.IGNORECASE),
     re.compile(r"^laboratory\s*" + _SEP + r"(.+)$", re.IGNORECASE),
     re.compile(r"^tested\s*by\s*" + _SEP + r"(.+)$", re.IGNORECASE),
@@ -234,6 +244,8 @@ def _segments(line: str) -> list[str]:
         before = line[gap.start() - 1] if gap.start() else ""
         after = line[gap.end()] if gap.end() < len(line) else ""
         if before in _SEP_CHARS or after in _SEP_CHARS:
+            continue
+        if line.endswith("..", 0, gap.start()) or line.startswith("..", gap.end()):
             continue
         piece = line[start:gap.start()].strip()
         if piece:

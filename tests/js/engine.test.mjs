@@ -129,6 +129,42 @@ test("parseCoa: net peptide content without a % sign still parses", () => {
   assert.equal(parseCoa("Net Peptide Content: 82.3\n").net_content_pct, 82.3);
 });
 
+test("parseCoa: more label wordings parse into their fields", () => {
+  const cases = [
+    ["Peptide Purity (HPLC): 99.3%", "purity_pct", 99.3],
+    ["Purity by HPLC: 99.3%", "purity_pct", 99.3],
+    ["Purity [HPLC]: 99.3%", "purity_pct", 99.3],
+    ["Purity, HPLC: 99.3%", "purity_pct", 99.3],
+    ["Purity (HPLC) ...... 99.3%", "purity_pct", 99.3],
+    ["Purity (HPLC) ......     99.3%", "purity_pct", 99.3],
+    ["Batch #: RC118-A", "batch_lot", "RC118-A"],
+    ["Lot #: RC118-A", "batch_lot", "RC118-A"],
+    ["Lot#: RC118-A", "batch_lot", "RC118-A"],
+    ["Batch Code: RC118-A", "batch_lot", "RC118-A"],
+    ["Batch ID: RC118-A", "batch_lot", "RC118-A"],
+    ["Laboratory Name: Meridian", "lab_name", "Meridian"],
+    ["Date of Test: 2026-02-14", "test_date", "2026-02-14"],
+    ["Testing Date: 2026-02-14", "test_date", "2026-02-14"],
+  ];
+  for (const [text, field, want] of cases) {
+    assert.equal(parseCoa(`${text}\n`)[field], want, text);
+  }
+});
+
+test("parseCoa: bare HPLC and bare Date stay unparsed", () => {
+  const coa = parseCoa("HPLC: 99.3%\nDate: 2026-02-14\n");
+  assert.equal(coa.purity_pct, null);
+  assert.equal(coa.test_date, null);
+});
+
+test("parseCoa: a long dot run after a label parses quickly", () => {
+  for (const text of [`purity${".".repeat(99_990)}x`, `purity${" .".repeat(49_990)}x`]) {
+    const start = performance.now();
+    parseCoa(text);
+    assert.ok(performance.now() - start < 3000);
+  }
+});
+
 test("computePurity: purity only, no net content", () => {
   const r = computePurity(5.0, 98.0);
   assert.ok(Math.abs(r.actual_mg - 4.9) < 1e-9);

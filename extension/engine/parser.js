@@ -31,7 +31,9 @@ export const MAX_COA_TEXT_CHARS = 100_000;
 // Built from code points, not literals, so this source file stays plain ASCII: OCR of a
 // printed COA turns plenty of hyphens into a long dash, so those count as separators too.
 const LONG_DASHES = String.fromCharCode(0x2013, 0x2014);
-const SEP = `(?::|=|(?<=\\s)[-${LONG_DASHES}])\\s*`;
+// A dot leader ("Purity (HPLC) ...... 99.3%") separates too. The lookahead keeps it from giving
+// back a dot to the value when nothing follows the leader.
+const SEP = `(?::|=|(?<=\\s)[-${LONG_DASHES}]|\\.{2,}(?!\\.))\\s*`;
 
 // The same characters, for the column-gap test in segments() below.
 const SEP_CHARS = `:=-${LONG_DASHES}`;
@@ -135,8 +137,17 @@ const PRODUCT_PATTERNS = [
 // "(?:\(...\))?\s*") so there are never two free-floating \s* runs on either side of an
 // empty-matchable group - that adjacency is what makes the scan quadratic on a long run of
 // whitespace.
+// A method written after the label ("Purity by HPLC", "Purity, RP-HPLC"). A fixed list rather
+// than any word, so both engines agree on case folding.
+const PURITY_METHOD = "(?:rp-?)?(?:u?hplc|uplc|lc)(?:-?(?:ms|uv))?";
+
 const PURITY_PATTERNS = [
-  new RegExp(`^(?:hplc\\s+)?purity\\s*(?:\\([^)]*\\)\\s*)?${SEP}${PCT_VALUE}`, "i"),
+  new RegExp(
+    "^(?:peptide\\s+)?(?:hplc\\s+)?purity\\s*"
+      + `(?:\\([^)]*\\)\\s*|\\[[^\\]]*\\]\\s*|(?:by\\s+|,\\s*)${PURITY_METHOD}\\s*)?`
+      + `${SEP}${PCT_VALUE}`,
+    "i",
+  ),
 ];
 
 const NET_CONTENT_PATTERNS = [
@@ -156,7 +167,7 @@ const MASS_PATTERNS = [
 
 // "(?:\s*-)?" rather than "\s*-?" for the hyphenated spellings ("Batch-No"): an optional
 // single character between two \s* runs is the quadratic shape again.
-const BATCH_LABEL_TAIL = "(?:\\s*-)?\\s*(?:(?:no\\.?|nr\\.?|number)\\s*)?";
+const BATCH_LABEL_TAIL = "(?:\\s*-)?\\s*(?:(?:no\\.?|nr\\.?|number|#|code|id)\\s*)?";
 
 // A batch number can carry internal spaces ("RC 118 A"). The old \S+ capture cut it off at the
 // first one; the value now runs to the end of the segment, and segments() has already cut the
@@ -168,9 +179,9 @@ const BATCH_PATTERNS = [
 ];
 
 const DATE_PATTERNS = [
-  new RegExp(`^test\\s*date\\s*${SEP}(.+)$`, "i"),
+  new RegExp(`^test(?:ing)?\\s*date\\s*${SEP}(.+)$`, "i"),
   new RegExp(`^date\\s*tested\\s*${SEP}(.+)$`, "i"),
-  new RegExp(`^date\\s*of\\s*analysis\\s*${SEP}(.+)$`, "i"),
+  new RegExp(`^date\\s*of\\s*(?:analysis|test(?:ing)?)\\s*${SEP}(.+)$`, "i"),
   new RegExp(`^analysis\\s*date\\s*${SEP}(.+)$`, "i"),
   new RegExp(`^report\\s*date\\s*${SEP}(.+)$`, "i"),
   new RegExp(`^coa\\s*date\\s*${SEP}(.+)$`, "i"),
@@ -186,6 +197,7 @@ const METHOD_PATTERNS = [
 
 const LAB_PATTERNS = [
   new RegExp(`^testing\\s*laboratory\\s*${SEP}(.+)$`, "i"),
+  new RegExp(`^laboratory\\s*name\\s*${SEP}(.+)$`, "i"),
   new RegExp(`^test(?:ing)?\\s*lab\\s*${SEP}(.+)$`, "i"),
   new RegExp(`^laboratory\\s*${SEP}(.+)$`, "i"),
   new RegExp(`^tested\\s*by\\s*${SEP}(.+)$`, "i"),
@@ -208,6 +220,7 @@ function segments(line) {
     const before = gap.index > 0 ? line[gap.index - 1] : "";
     const after = end < line.length ? line[end] : "";
     if (SEP_CHARS.includes(before) || SEP_CHARS.includes(after)) continue;
+    if (line.endsWith("..", gap.index) || line.startsWith("..", end)) continue;
     const piece = line.slice(start, gap.index).trim();
     if (piece) parts.push(piece);
     start = end;

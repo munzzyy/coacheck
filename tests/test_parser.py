@@ -139,6 +139,45 @@ class LabelVariants(unittest.TestCase):
         self.assertEqual(parse_coa("purity: 95%\n").purity_pct, 95.0)
 
 
+class MoreLabelWordings(unittest.TestCase):
+    """Wordings that used to come back as a missing field on a complete COA, so
+    the checklist raised a false FAIL or WARN."""
+
+    def test_purity_wordings(self):
+        for text in (
+            "Peptide Purity (HPLC): 99.3%",
+            "Purity by HPLC: 99.3%",
+            "Purity [HPLC]: 99.3%",
+            "Purity, HPLC: 99.3%",
+            "Purity (HPLC) ...... 99.3%",
+            "Purity (HPLC) ......     99.3%",
+        ):
+            with self.subTest(text=text):
+                self.assertEqual(parse_coa(text + "\n").purity_pct, 99.3)
+
+    def test_batch_wordings(self):
+        for text in ("Batch #: RC118-A", "Lot #: RC118-A", "Lot#: RC118-A",
+                     "Batch Code: RC118-A", "Batch ID: RC118-A"):
+            with self.subTest(text=text):
+                self.assertEqual(parse_coa(text + "\n").batch_lot, "RC118-A")
+
+    def test_laboratory_name(self):
+        self.assertEqual(parse_coa("Laboratory Name: Meridian\n").lab_name, "Meridian")
+
+    def test_date_wordings(self):
+        for text in ("Date of Test: 2026-02-14", "Testing Date: 2026-02-14"):
+            with self.subTest(text=text):
+                self.assertEqual(parse_coa(text + "\n").test_date, "2026-02-14")
+
+    def test_bare_hplc_and_bare_date_stay_unparsed(self):
+        coa = parse_coa("HPLC: 99.3%\nDate: 2026-02-14\n")
+        self.assertIsNone(coa.purity_pct)
+        self.assertIsNone(coa.test_date)
+
+    def test_an_empty_dot_leader_is_not_a_value(self):
+        self.assertIsNone(parse_coa("Batch ..........\n").batch_lot)
+
+
 class SeparatorRules(unittest.TestCase):
     """A dash only separates a label from its value when whitespace comes first.
     Compound label names carry their own hyphens, and reading the tail of the
@@ -551,6 +590,16 @@ class PathologicalWhitespace(unittest.TestCase):
         parse_coa(text)
         elapsed = time.perf_counter() - start
         self.assertLess(elapsed, 5.0)
+
+    def test_long_dot_run_after_a_label_parses_quickly(self):
+        for text in (
+            "purity" + ("." * 99_990) + "x",
+            "purity" + (" ." * 49_990) + "x",
+        ):
+            with self.subTest(length=len(text)):
+                start = time.perf_counter()
+                parse_coa(text)
+                self.assertLess(time.perf_counter() - start, 5.0)
 
     def test_many_narrow_columns_parse_quickly(self):
         # Column splitting turns one line into several candidate strings, and
