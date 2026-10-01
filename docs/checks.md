@@ -32,7 +32,9 @@ guessing, because a mass wrong by a factor of a thousand is worse than no mass a
 
 A purity figure can carry a leading bound, written as a symbol (`>=`, `<`, `≥`) or as words
 (`NLT`, `NMT`, `min.`, `max.`, `not less than`, `greater than`). Word forms are normalized to
-the symbol they mean, so `NLT 98.0%` and `>=98.0%` reach CC-PURITY as the same thing.
+the symbol they mean, so `NLT 98.0%` and `>=98.0%` reach CC-PURITY as the same thing. When a
+row carries both a bound and a plain value, as in a Specification column next to a Result
+column (`Purity (HPLC)   NLT 98.0%   95.1%`), the plain value is the measured one and wins.
 
 ## Reconstitution math
 
@@ -57,10 +59,14 @@ and shows which basis it used.
 ### CC-PURITY
 
 Whether a usable HPLC purity figure is present. FAIL if no purity percentage is found anywhere,
-or if the stated value is outside the physically possible 0-100% range. WARN if purity is
-present but below `RESEARCH_GRADE_PURITY_THRESHOLD` (98%, `coacheck/redflags.py`) - a labeling
-convention some vendors use for "research grade" material, not a clinical or safety threshold.
-PASS at or above that line.
+or if the stated value is outside the physically possible 0-100% range. WARN if the purity is
+stated only as an upper bound (`<98%` or `NMT 98%`). The real figure could be anything under
+that, so it can't be checked against the line below, and the purity math is skipped with the
+reason in its place. `parse --recon-water` then refuses the actual-mass basis unless you pass
+`--recon-basis labeled`, and the extension's calculator falls back to the labeled mass with a
+note. WARN if purity is present but below `RESEARCH_GRADE_PURITY_THRESHOLD` (98%,
+`coacheck/redflags.py`) - a labeling convention some vendors use for "research grade" material,
+not a clinical or safety threshold. PASS at or above that line.
 
 ### CC-MASS
 

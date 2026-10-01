@@ -68,8 +68,6 @@ async function triggerSelect(tab) {
   }
 }
 
-api.action.onClicked.addListener((tab) => triggerSelect(tab));
-
 api.commands.onCommand.addListener(async (command, tab) => {
   if (command !== "select-region") return;
   if (!tab) {

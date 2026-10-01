@@ -9,7 +9,7 @@ git clone https://github.com/munzzyy/coacheck
 cd coacheck
 ```
 
-There's nothing to install. coacheck is pure standard library, and so is its test suite.
+There's nothing to install. coacheck is pure standard library, and so is its Python test suite.
 
 ## Running the tests
 
@@ -17,22 +17,45 @@ There's nothing to install. coacheck is pure standard library, and so is its tes
 python -m unittest discover -s tests -t .
 ```
 
-That's the whole suite: parser tests, math tests (hand-verified expected numbers), red-flag
+That's the Python suite: parser tests, math tests (hand-verified expected numbers), red-flag
 checklist tests, and CLI tests, plus a set of synthetic COA fixtures in `tests/fixtures/`. CI
 runs the same command across Linux, macOS, and Windows on Python 3.9 through 3.14.
+
+The browser extension runs a JS port of the same engine, so anything under `coacheck/` that
+changes parsing or math has a twin under `extension/engine/`. Its tests need Node and nothing
+from npm:
+
+```
+node --test tests/js/*.test.mjs
+python3 tests/web_parity/gen_fixtures.py && node tests/web_parity/check.mjs
+```
+
+The second line runs every case in `tests/web_parity/cases.json` through both engines and
+compares the results. When they disagree, the JS is the one to fix.
 
 ## Adding a label variant to the parser
 
 Real COAs word the same field a dozen ways. If you hit a real (or realistic synthetic) COA where
-a field goes unparsed because of wording this tool doesn't recognize yet, add the new label
-pattern to `coacheck/parser.py` and a fixture under `tests/fixtures/` that exercises it. A fixture
-without a matching test doesn't count - the fix has to stay fixed.
+a field goes unparsed because of wording this tool doesn't recognize yet:
+
+1. Add the label pattern to `coacheck/parser.py` and the same pattern to
+   `extension/engine/parser.js`.
+2. Add a test for it to `tests/test_parser.py` and to `tests/js/engine.test.mjs`.
+3. Add a case to `tests/web_parity/cases.json`, either the line itself or a new synthetic
+   fixture under `tests/fixtures/`. `gen_fixtures.py` stops with an error when a fixture has no
+   case, so a fixture always needs one.
+4. Run the Python suite, `node --test tests/js/*.test.mjs` and
+   `python3 tests/web_parity/gen_fixtures.py && node tests/web_parity/check.mjs`.
+
+A fixture without a matching test doesn't count - the fix has to stay fixed. Keep fixtures
+synthetic: no real vendor COAs, lab names or batch numbers.
 
 ## Adding a red-flag check
 
 Every check in `coacheck/redflags.py` returns exactly one `Flag` with a stable id (`CC-...`).
 New checks need a test for each of their pass/warn/fail branches - see `tests/test_redflags.py`
-for the shape.
+for the shape. The same check goes into `extension/engine/redflags.js`, with parity cases for
+each branch.
 
 ## Zero dependencies
 

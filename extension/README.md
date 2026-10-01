@@ -14,7 +14,8 @@ checks do and don't do.
 
 ## Using it
 
-1. Click the toolbar icon, or press **Alt+Shift+A**.
+1. Click the toolbar icon to open the popup, then **select a COA region on this page**. Or
+   press **Alt+Shift+A** to skip the popup.
 2. Drag a box over the COA. Esc cancels.
 3. It captures that region, OCRs it locally, and shows the parsed fields, purity math, a
    reconstitution mini-calculator (enter water + dose to see the draw), and the red-flag
@@ -45,7 +46,7 @@ CSP, which needs a recent-enough MV3 implementation - see Architecture below).
 ## Architecture
 
 ```
-toolbar click / Alt+Shift+A
+popup button / Alt+Shift+A
         |  chrome.scripting.executeScript
         v
 content/overlay.js  (drag-select, pointer events - mouse and touch both)
@@ -110,18 +111,18 @@ npm run e2e
 ```
 
 `tests/e2e/extension_smoke.mjs` loads `extension/` unpacked into headless Chromium and
-drives it over the DevTools protocol with nothing but Node's own `fetch` and `WebSocket`.
-It pastes `tests/fixtures/coa_clean.txt` into the popup and checks the result that comes
-back through the real `background.js`. Then it draws the fixture's field lines onto a
-canvas and OCRs them through the offscreen document and the bundled Tesseract. The
-drag-select overlay and `captureVisibleTab` are not covered because `activeTab` needs a
-real click.
+drives it over the DevTools protocol with nothing but the `fetch` and `WebSocket` built into
+Node. It pastes `tests/fixtures/coa_clean.txt` into the popup and checks the result that
+comes back through the real `background.js`. Then it draws the field lines from that fixture
+onto a canvas and OCRs them through the offscreen document and the bundled Tesseract. The
+drag-select overlay and `captureVisibleTab` are not covered because `activeTab` needs a real
+click.
 
 It needs Chromium (`/usr/bin/chromium`, or set `CHROMIUM`). The browser runs with a
 throwaway profile and background networking off, and both go away when the script exits.
 Run it after touching `background.js`, `offscreen/`, `ocr/` or the popup. To test another
 copy of the extension, pass `--extension-dir <path>`. This is a local gate for now. It
-stays out of CI until a CI run shows the runner's browser loading an unpacked extension.
+stays out of CI until a CI run shows the browser there loading an unpacked extension.
 
 ## OCR: bundled, local, no CDN
 
@@ -132,7 +133,7 @@ npm packages (versions and licenses in `vendor/NOTICE.md`). Every path handed to
 and OCR makes zero network requests.
 
 `tesseract-core-simd-lstm.wasm.js` is an Emscripten single-file build with the compiled
-WebAssembly embedded as base64, so there's no separate `.wasm` file to serve alongside it.
+WebAssembly embedded as base64, so there is no separate `.wasm` file to serve alongside it.
 LSTM-only + SIMD is fast and accurate; it needs WebAssembly SIMD, which every browser
 version this extension targets already requires.
 
@@ -148,7 +149,7 @@ well-documented offline/self-hosted configuration, which is exactly the mode thi
 | `offscreen` | Chrome only. A service worker has no document; this gives OCR a hidden page to run in. Firefox ignores this permission (its background page already has one) - that's the one `web-ext lint` warning that's expected, see below. |
 
 No `host_permissions`, no `tabs`, no `storage`. This extension keeps no settings and
-remembers nothing between uses - there's nothing to persist. `extension/about/about.html`
+remembers nothing between uses - there is nothing to persist. `extension/about/about.html`
 (linked from the popup) carries the same table for anyone who installs it and wants to
 check before they read anything.
 
@@ -171,12 +172,12 @@ all expected:
 
 - **OCR accuracy on real-world photos is genuinely rough.** Clean, high-contrast, screen-
   rendered text (a vendor's product page, a well-lit scan) OCRs close to perfectly. A blurry
-  phone photo of a printed COA at an angle will not. When OCR doesn't find COA fields, the
+  phone photo of a printed COA at an angle will not. When OCR does not find COA fields, the
   overlay says so plainly and shows the raw recognized text so you can see why, rather than
   guessing or failing silently.
 - **Mobile Firefox is untested.** The drag-select uses Pointer Events (not mouse-only
   events) specifically so a single-finger drag works the same way a mouse drag does, and the
-  manifest declares Android compatibility - but there's no Android device in this pass to
+  manifest declares Android compatibility - but there is no Android device in this pass to
   confirm it against.
 - **English only.** `tessdata/` ships the English language model only. Adding another
   language means vendoring its `.traineddata.gz` and passing the right `langPath`/`langs` -
