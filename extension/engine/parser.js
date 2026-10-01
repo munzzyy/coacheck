@@ -61,7 +61,15 @@ const WHITESPACE_RUN = /\s+/g;
 // port matches ([0-9]) so non-ASCII digits behave the same in both. toFloat sorts out
 // comma-as-decimal vs comma-as-thousands-separator.
 const DECIMAL_VALUE = "(\\d+(?:[.,]\\d+)?)";
-const PCT_VALUE = `${QUALIFIER}${DECIMAL_VALUE}\\s*%?`;
+
+// "mcg" has to be tried before "g" or the alternation matches the tail of it.
+const MICRO = String.fromCharCode(0x00b5);
+const MU = String.fromCharCode(0x03bc);
+const MASS_UNITS = `(?:mcg|${MICRO}g|${MU}g|ug|mg|g)`;
+
+// Group 3 catches a mass unit where the % should be, so "Peptide Content: 5mg" can be turned
+// away instead of read as 5%.
+const PCT_VALUE = `${QUALIFIER}${DECIMAL_VALUE}\\s*(%|${MASS_UNITS}\\b)?`;
 
 // A column holding nothing but a percentage. The % is required: a bare number further along
 // a row could be anything.
@@ -72,11 +80,9 @@ const PCT_CELL = new RegExp(`^${QUALIFIER}${DECIMAL_VALUE}\\s*%$`, "i");
 const THOUSANDS_GROUPED = /^\d{1,3}(?:,\d{3})+$/;
 
 // Vials get labeled in more than mg. Everything is normalized to mg so the purity and
-// reconstitution math downstream only ever sees one unit. "mcg" has to be tried before "g"
-// or the alternation matches the tail of it.
-const MICRO = String.fromCharCode(0x00b5);
-const MU = String.fromCharCode(0x03bc);
-const MASS_UNIT = `\\s*(mcg|${MICRO}g|${MU}g|ug|mg|g)\\b`;
+// reconstitution math downstream only ever sees one unit. A molar mass ("1419.53 g/mol") is
+// not a vial mass.
+const MASS_UNIT = `\\s*(${MASS_UNITS})\\b(?!\\s*(?:/\\s*)?mol)`;
 
 const MASS_UNIT_TO_MG = {
   mg: 1.0,
@@ -141,6 +147,7 @@ const NET_CONTENT_PATTERNS = [
 
 const MASS_PATTERNS = [
   new RegExp(`^net\\s*weight\\s*${SEP}${DECIMAL_VALUE}${MASS_UNIT}`, "i"),
+  new RegExp(`^net\\s*content\\s*${SEP}${DECIMAL_VALUE}${MASS_UNIT}`, "i"),
   new RegExp(`^quantity\\s*${SEP}${DECIMAL_VALUE}${MASS_UNIT}`, "i"),
   new RegExp(`^vial\\s*(?:content|weight|size)\\s*${SEP}${DECIMAL_VALUE}${MASS_UNIT}`, "i"),
   new RegExp(`^fill\\s*weight\\s*${SEP}${DECIMAL_VALUE}${MASS_UNIT}`, "i"),
@@ -316,7 +323,8 @@ function firstPctMatch(lines, patterns) {
       for (const candidate of tier) {
         for (const pattern of patterns) {
           const m = pattern.exec(candidate);
-          const value = m ? toFloat(m[2]) : null;
+          if (!m || (m[3] !== undefined && m[3] !== "%")) continue;
+          const value = toFloat(m[2]);
           if (value === null) continue;
           const qualifier = normalizeQualifier(m[1]);
           if (qualifier === null) return [value, null];

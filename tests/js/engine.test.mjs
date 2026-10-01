@@ -102,6 +102,33 @@ test("parseCoa: a bare number far along a row is not glued to the label", () => 
   assert.equal(parseCoa("Purity  was  checked  on  5  vials\n").purity_pct, null);
 });
 
+test("parseCoa: a peptide content in mg is not read as a percentage", () => {
+  const coa = parseCoa("Purity: 99.1%\nPeptide Content: 5mg\nQuantity: 5 mg\n");
+  assert.equal(coa.net_content_pct, null);
+  assert.equal(coa.mass_mg, 5);
+});
+
+test("parseCoa: a net content in mg is the vial mass", () => {
+  const coa = parseCoa("Purity: 99.1%\nNet Content: 10 mg\n");
+  assert.equal(coa.net_content_pct, null);
+  assert.equal(coa.mass_mg, 10);
+});
+
+test("parseCoa: a molar mass is not the vial mass", () => {
+  for (const text of [
+    "Weight: 1419.53 g/mol\nPurity: 99.1%\nQuantity: 5 mg\n",
+    "Mass: 1419.5 g/mol\nPurity: 99.1%\nNet Weight: 5 mg\n",
+    "Weight: 1419.53 g / mol\nQuantity: 5 mg\n",
+    "Weight: 1419.53 g mol-1\nQuantity: 5 mg\n",
+  ]) {
+    assert.equal(parseCoa(text).mass_mg, 5, text);
+  }
+});
+
+test("parseCoa: net peptide content without a % sign still parses", () => {
+  assert.equal(parseCoa("Net Peptide Content: 82.3\n").net_content_pct, 82.3);
+});
+
 test("computePurity: purity only, no net content", () => {
   const r = computePurity(5.0, 98.0);
   assert.ok(Math.abs(r.actual_mg - 4.9) < 1e-9);

@@ -377,6 +377,37 @@ class MassUnits(unittest.TestCase):
         self.assertIsNone(parse_coa("Net Weight: 5 kg\n").mass_mg)
 
 
+class MassIsNotAPercentage(unittest.TestCase):
+    """The % sign on a percent field is optional, which let a mass through as a
+    percentage, and a molar mass read as grams."""
+
+    def test_peptide_content_in_mg_is_not_a_percentage(self):
+        coa = parse_coa("Purity: 99.1%\nPeptide Content: 5mg\nQuantity: 5 mg\n")
+        self.assertIsNone(coa.net_content_pct)
+        self.assertEqual(coa.mass_mg, 5.0)
+
+    def test_net_content_in_mg_is_the_vial_mass(self):
+        coa = parse_coa("Purity: 99.1%\nNet Content: 10 mg\n")
+        self.assertIsNone(coa.net_content_pct)
+        self.assertEqual(coa.mass_mg, 10.0)
+
+    def test_molar_mass_is_not_the_vial_mass(self):
+        for text in (
+            "Weight: 1419.53 g/mol\nPurity: 99.1%\nQuantity: 5 mg\n",
+            "Mass: 1419.5 g/mol\nPurity: 99.1%\nNet Weight: 5 mg\n",
+            "Weight: 1419.53 g / mol\nQuantity: 5 mg\n",
+            "Weight: 1419.53 g mol-1\nQuantity: 5 mg\n",
+        ):
+            with self.subTest(text=text):
+                self.assertEqual(parse_coa(text).mass_mg, 5.0)
+
+    def test_net_peptide_content_without_a_percent_sign_still_parses(self):
+        self.assertEqual(parse_coa("Net Peptide Content: 82.3\n").net_content_pct, 82.3)
+
+    def test_mass_unit_on_purity_is_dropped(self):
+        self.assertIsNone(parse_coa("Purity: 99 mg\n").purity_pct)
+
+
 class DecimalSeparatorVariants(unittest.TestCase):
     """COAs from outside the US/UK commonly write decimals with a comma
     ("98,99%") instead of a dot - both must parse to the identical float."""

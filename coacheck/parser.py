@@ -67,7 +67,13 @@ _QUALIFIER_WORDS = {
 # to [0-9] keeps the two engines matching on non-ASCII digit input.
 # _to_float sorts out comma-as-decimal vs comma-as-thousands-separator.
 _DECIMAL_VALUE = r"([0-9]+(?:[.,][0-9]+)?)"
-_PCT_VALUE = _QUALIFIER + _DECIMAL_VALUE + r"\s*%?"
+
+# "mcg" has to be tried before "g" or the alternation matches the tail of it.
+_MASS_UNITS = r"(?:mcg|" + chr(0x00B5) + r"g|" + chr(0x03BC) + r"g|ug|mg|g)"
+
+# Group 3 catches a mass unit where the % should be, so "Peptide Content: 5mg"
+# can be turned away instead of read as 5%.
+_PCT_VALUE = _QUALIFIER + _DECIMAL_VALUE + r"\s*(%|" + _MASS_UNITS + r"\b)?"
 
 # A column holding nothing but a percentage. The % is required: a bare number
 # further along a row could be anything.
@@ -78,9 +84,9 @@ _PCT_CELL = re.compile(r"^" + _QUALIFIER + _DECIMAL_VALUE + r"\s*%$", re.IGNOREC
 _THOUSANDS_GROUPED = re.compile(r"^[0-9]{1,3}(?:,[0-9]{3})+$")
 
 # Vials get labeled in more than mg. Everything is normalized to mg so the
-# purity and reconstitution math downstream only ever sees one unit. "mcg" has
-# to be tried before "g" or the alternation matches the tail of it.
-_MASS_UNIT = r"\s*(mcg|" + chr(0x00B5) + r"g|" + chr(0x03BC) + r"g|ug|mg|g)\b"
+# purity and reconstitution math downstream only ever sees one unit. A molar
+# mass ("1419.53 g/mol") is not a vial mass.
+_MASS_UNIT = r"\s*(" + _MASS_UNITS + r")\b(?!\s*(?:/\s*)?mol)"
 
 _MASS_UNIT_TO_MG = {
     "mg": 1.0,
@@ -144,6 +150,7 @@ _NET_CONTENT_PATTERNS = [
 
 _MASS_PATTERNS = [
     re.compile(r"^net\s*weight\s*" + _SEP + _DECIMAL_VALUE + _MASS_UNIT, re.IGNORECASE),
+    re.compile(r"^net\s*content\s*" + _SEP + _DECIMAL_VALUE + _MASS_UNIT, re.IGNORECASE),
     re.compile(r"^quantity\s*" + _SEP + _DECIMAL_VALUE + _MASS_UNIT, re.IGNORECASE),
     re.compile(r"^vial\s*(?:content|weight|size)\s*" + _SEP + _DECIMAL_VALUE + _MASS_UNIT, re.IGNORECASE),
     re.compile(r"^fill\s*weight\s*" + _SEP + _DECIMAL_VALUE + _MASS_UNIT, re.IGNORECASE),
@@ -369,7 +376,9 @@ def _first_pct_match(
             for candidate in tier:
                 for pattern in patterns:
                     m = pattern.match(candidate)
-                    value = _to_float(m.group(2)) if m else None
+                    if not m or m.group(3) not in (None, "%"):
+                        continue
+                    value = _to_float(m.group(2))
                     if value is None:
                         continue
                     qualifier = _normalize_qualifier(m.group(1))
