@@ -67,6 +67,41 @@ test("parseCoa: a long whitespace run after a label parses quickly", () => {
   assert.ok(performance.now() - start < 3000);
 });
 
+test("parseCoa: a spec column before the result reads the result", () => {
+  const coa = parseCoa(
+    "Test           Specification     Result\n"
+    + "Purity (HPLC)  NLT 98.0%         95.1%\n"
+    + "Net Weight     5 mg              5 mg\n",
+  );
+  assert.equal(coa.purity_pct, 95.1);
+  assert.equal(coa.purity_qualifier, null);
+});
+
+test("parseCoa: a symbol spec before the result reads the result", () => {
+  const coa = parseCoa("Purity (HPLC)   >=98%    96.4%\nQuantity: 5 mg\n");
+  assert.equal(coa.purity_pct, 96.4);
+  assert.equal(coa.purity_qualifier, null);
+});
+
+test("parseCoa: a method column between label and spec still finds the result", () => {
+  const coa = parseCoa(
+    "Test      Method    Specification   Result\n"
+    + "Purity    HPLC      NLT 98.0%       95.1%\n"
+    + "Quantity: 5 mg\n",
+  );
+  assert.equal(coa.purity_pct, 95.1);
+});
+
+test("parseCoa: a spec-only row keeps the bound", () => {
+  const coa = parseCoa("Purity (HPLC)  NLT 98.0%\nQuantity: 5 mg\n");
+  assert.equal(coa.purity_pct, 98.0);
+  assert.equal(coa.purity_qualifier, ">=");
+});
+
+test("parseCoa: a bare number far along a row is not glued to the label", () => {
+  assert.equal(parseCoa("Purity  was  checked  on  5  vials\n").purity_pct, null);
+});
+
 test("computePurity: purity only, no net content", () => {
   const r = computePurity(5.0, 98.0);
   assert.ok(Math.abs(r.actual_mg - 4.9) < 1e-9);

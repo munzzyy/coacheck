@@ -63,6 +63,10 @@ const WHITESPACE_RUN = /\s+/g;
 const DECIMAL_VALUE = "(\\d+(?:[.,]\\d+)?)";
 const PCT_VALUE = `${QUALIFIER}${DECIMAL_VALUE}\\s*%?`;
 
+// A column holding nothing but a percentage. The % is required: a bare number further along
+// a row could be anything.
+const PCT_CELL = new RegExp(`^${QUALIFIER}${DECIMAL_VALUE}\\s*%$`, "i");
+
 // A number written with commas as thousands separators ("1,000", "5,000"). Told apart from a
 // comma decimal ("98,99") so "1,000 mg" isn't read as 1 mg.
 const THOUSANDS_GROUPED = /^\d{1,3}(?:,\d{3})+$/;
@@ -219,13 +223,31 @@ function isColumnHeader(value) {
 }
 
 function candidates(line) {
-  const segs = segments(line);
+  return tiers(segments(line));
+}
+
+function tiers(segs) {
   if (segs.length < 2) return [segs, []];
   const joined = [];
   for (let i = 0; i < segs.length - 1; i++) {
     if (!isColumnHeader(segs[i + 1])) joined.push(`${segs[i]}: ${segs[i + 1]}`);
   }
   return [segs, joined];
+}
+
+// candidates(), plus each label column glued to every percentage column further along the
+// row, so a specs table's result is reachable however far from the label it sits.
+function pctCandidates(line) {
+  const segs = segments(line);
+  const [direct, joined] = tiers(segs);
+  const cells = segs.map((s) => PCT_CELL.test(s));
+  for (let i = 0; i < segs.length; i++) {
+    if (cells[i]) continue;
+    for (let j = i + 2; j < segs.length; j++) {
+      if (cells[j]) joined.push(`${segs[i]}: ${segs[j]}`);
+    }
+  }
+  return [direct, joined];
 }
 
 // Yield every pattern match across the document, in priority order.
@@ -285,10 +307,24 @@ function normalizeQualifier(token) {
 
 // Like firstMassMatch, but for a percentage that may carry a leading qualifier ("<98.5%",
 // ">=99%", "NLT 98%"). Returns [value, qualifier]; qualifier is null when none was written.
+// A specs table row carries the bound and the measured result side by side, in either order.
+// Within one line and tier, a plain value beats a bound.
 function firstPctMatch(lines, patterns) {
-  for (const m of iterMatches(lines, patterns)) {
-    const value = toFloat(m[2]);
-    if (value !== null) return [value, normalizeQualifier(m[1])];
+  for (const line of lines) {
+    for (const tier of pctCandidates(line)) {
+      let bound = null;
+      for (const candidate of tier) {
+        for (const pattern of patterns) {
+          const m = pattern.exec(candidate);
+          const value = m ? toFloat(m[2]) : null;
+          if (value === null) continue;
+          const qualifier = normalizeQualifier(m[1]);
+          if (qualifier === null) return [value, null];
+          if (bound === null) bound = [value, qualifier];
+        }
+      }
+      if (bound !== null) return bound;
+    }
   }
   return [null, null];
 }

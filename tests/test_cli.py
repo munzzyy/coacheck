@@ -90,6 +90,23 @@ class ParseCommand(unittest.TestCase):
         payload = json.loads(out)  # would raise on a bare Infinity token
         self.assertIsNone(payload["fields"]["purity_pct"])
 
+    def test_spec_before_result_runs_the_math_on_the_result(self):
+        text = (
+            "Test           Specification     Result\n"
+            "Purity (HPLC)  NLT 98.0%         95.1%\n"
+            "Net Weight     5 mg              5 mg\n"
+        )
+        with mock.patch.object(cli.sys, "stdin") as stdin:
+            stdin.buffer.read.return_value = text.encode("utf-8")
+            code, out, _err = _run(["parse", "--json"])
+        self.assertEqual(code, 0)
+        payload = json.loads(out)
+        self.assertEqual(payload["fields"]["purity_pct"], 95.1)
+        self.assertIsNone(payload["fields"]["purity_qualifier"])
+        self.assertAlmostEqual(payload["purity"]["actual_mg"], 4.755)
+        purity_flag = next(f for f in payload["flags"] if f["id"] == "CC-PURITY")
+        self.assertEqual(purity_flag["status"], "warn")
+
     def test_oversized_stdin_input_errors_cleanly(self):
         huge = b"x" * (cli.MAX_INPUT_BYTES + 1)
         with mock.patch.object(cli.sys, "stdin") as stdin:

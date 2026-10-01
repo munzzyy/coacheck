@@ -1,0 +1,15 @@
+Certificate of Analysis
+
+Product Name: Research Compound RC-207
+Batch No: RC207-20260311-B
+Net Weight: 5 mg
+Test Method: RP-HPLC
+Test Date: 2026-03-11
+Testing Laboratory: Fernmoor Analytical
+
+Test                 Method      Specification     Result
+Appearance           Visual      White powder      Conforms
+Purity               HPLC        NLT 98.0%         95.1%
+Net Peptide Content  AAA         NLT 80.0%         86.4%
+
+Result applies only to the batch listed above.

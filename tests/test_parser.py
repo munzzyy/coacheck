@@ -233,6 +233,7 @@ class TableLayout(unittest.TestCase):
         )
         self.assertIsNone(coa.method)
         self.assertEqual(coa.batch_lot, "B-1")
+        self.assertEqual(coa.purity_pct, 99.1)
 
     def test_a_spelled_out_separator_beats_the_header_guard(self):
         # The guard only applies to rows glued together from columns. A document
@@ -242,6 +243,55 @@ class TableLayout(unittest.TestCase):
     def test_padded_colon_is_still_one_field(self):
         # A gap that touches a separator is padding, not a column boundary.
         self.assertEqual(parse_coa("Purity   :    98.5 %\n").purity_pct, 98.5)
+
+
+class SpecBeforeResult(unittest.TestCase):
+    """A specs table puts the bound next to the measured result, often with the
+    spec first. The bound used to win, so a 95.1% result passed as 98%."""
+
+    def test_spec_column_before_result(self):
+        coa = parse_coa(
+            "Test           Specification     Result\n"
+            "Purity (HPLC)  NLT 98.0%         95.1%\n"
+            "Net Weight     5 mg              5 mg\n"
+        )
+        self.assertEqual(coa.purity_pct, 95.1)
+        self.assertIsNone(coa.purity_qualifier)
+        self.assertEqual(coa.mass_mg, 5.0)
+
+    def test_symbol_spec_before_result(self):
+        coa = parse_coa("Purity (HPLC)   >=98%    96.4%\nQuantity: 5 mg\n")
+        self.assertEqual(coa.purity_pct, 96.4)
+        self.assertIsNone(coa.purity_qualifier)
+
+    def test_method_column_between_label_and_spec(self):
+        coa = parse_coa(
+            "Test      Method    Specification   Result\n"
+            "Purity    HPLC      NLT 98.0%       95.1%\n"
+            "Quantity: 5 mg\n"
+        )
+        self.assertEqual(coa.purity_pct, 95.1)
+        self.assertIsNone(coa.purity_qualifier)
+
+    def test_spec_only_row_keeps_the_bound(self):
+        coa = parse_coa("Purity (HPLC)  NLT 98.0%\nQuantity: 5 mg\n")
+        self.assertEqual(coa.purity_pct, 98.0)
+        self.assertEqual(coa.purity_qualifier, ">=")
+
+    def test_result_before_spec_is_unchanged(self):
+        coa = parse_coa("Purity (HPLC)    99.1 %     NLT 98.0 %\n")
+        self.assertEqual(coa.purity_pct, 99.1)
+        self.assertIsNone(coa.purity_qualifier)
+
+    def test_a_bare_number_far_along_a_row_is_not_glued(self):
+        self.assertIsNone(parse_coa("Purity  was  checked  on  5  vials\n").purity_pct)
+
+    def test_spec_before_result_fixture(self):
+        coa = parse_coa(fixture_text("coa_spec_before_result.txt"))
+        self.assertEqual(coa.purity_pct, 95.1)
+        self.assertEqual(coa.net_content_pct, 86.4)
+        self.assertIsNone(coa.purity_qualifier)
+        self.assertEqual(coa.method, "RP-HPLC")
 
 
 class TwoFieldsOnOneLine(unittest.TestCase):

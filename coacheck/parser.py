@@ -69,6 +69,10 @@ _QUALIFIER_WORDS = {
 _DECIMAL_VALUE = r"([0-9]+(?:[.,][0-9]+)?)"
 _PCT_VALUE = _QUALIFIER + _DECIMAL_VALUE + r"\s*%?"
 
+# A column holding nothing but a percentage. The % is required: a bare number
+# further along a row could be anything.
+_PCT_CELL = re.compile(r"^" + _QUALIFIER + _DECIMAL_VALUE + r"\s*%$", re.IGNORECASE)
+
 # A number written with commas as thousands separators ("1,000", "5,000").
 # Told apart from a comma decimal ("98,99") so "1,000 mg" isn't read as 1 mg.
 _THOUSANDS_GROUPED = re.compile(r"^[0-9]{1,3}(?:,[0-9]{3})+$")
@@ -251,7 +255,10 @@ def _candidates(line: str) -> tuple[list[str], list[str]]:
     all. Tier one is tried first for every pattern, so a line that already
     spells out its separator never gets reinterpreted as a table row.
     """
-    segments = _segments(line)
+    return _tiers(_segments(line))
+
+
+def _tiers(segments: list[str]) -> tuple[list[str], list[str]]:
     if len(segments) < 2:
         return segments, []
     joined = [
@@ -260,6 +267,22 @@ def _candidates(line: str) -> tuple[list[str], list[str]]:
         if not _is_column_header(segments[i + 1])
     ]
     return segments, joined
+
+
+def _pct_candidates(line: str) -> tuple[list[str], list[str]]:
+    """_candidates, plus each label column glued to every percentage column
+    further along the row, so a specs table's result is reachable however far
+    from the label it sits ("Purity  HPLC  NLT 98.0%  95.1%")."""
+    segments = _segments(line)
+    direct, joined = _tiers(segments)
+    cells = [bool(_PCT_CELL.match(s)) for s in segments]
+    for i, label in enumerate(segments):
+        if cells[i]:
+            continue
+        joined.extend(
+            f"{label}: {segments[j]}" for j in range(i + 2, len(segments)) if cells[j]
+        )
+    return direct, joined
 
 
 def _iter_matches(lines: list[str], patterns: list[re.Pattern]):
@@ -335,11 +358,27 @@ def _first_pct_match(
 ) -> tuple[Optional[float], Optional[str]]:
     """Like _first_mass_match, but for a percentage that may carry a leading
     qualifier ("<98.5%", ">=99%", "NLT 98%"). Returns (value, qualifier); the
-    qualifier is None when none was written."""
-    for m in _iter_matches(lines, patterns):
-        value = _to_float(m.group(2))
-        if value is not None:
-            return value, _normalize_qualifier(m.group(1))
+    qualifier is None when none was written.
+
+    A specs table row carries the bound and the measured result side by side,
+    in either order. Within one line and tier, a plain value beats a bound.
+    """
+    for line in lines:
+        for tier in _pct_candidates(line):
+            bound = None
+            for candidate in tier:
+                for pattern in patterns:
+                    m = pattern.match(candidate)
+                    value = _to_float(m.group(2)) if m else None
+                    if value is None:
+                        continue
+                    qualifier = _normalize_qualifier(m.group(1))
+                    if qualifier is None:
+                        return value, None
+                    if bound is None:
+                        bound = (value, qualifier)
+            if bound is not None:
+                return bound
     return None, None
 
 
