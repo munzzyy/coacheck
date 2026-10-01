@@ -103,6 +103,26 @@ equal with no translation layer that could itself drift.
 Unit tests for the engine and the crop-coordinate math live in `tests/js/` (`node --test
 tests/js/*.test.mjs`, or `npm test`).
 
+## End-to-end smoke test
+
+```
+npm run e2e
+```
+
+`tests/e2e/extension_smoke.mjs` loads `extension/` unpacked into headless Chromium and
+drives it over the DevTools protocol with nothing but Node's own `fetch` and `WebSocket`.
+It pastes `tests/fixtures/coa_clean.txt` into the popup and checks the result that comes
+back through the real `background.js`. Then it draws the fixture's field lines onto a
+canvas and OCRs them through the offscreen document and the bundled Tesseract. The
+drag-select overlay and `captureVisibleTab` are not covered because `activeTab` needs a
+real click.
+
+It needs Chromium (`/usr/bin/chromium`, or set `CHROMIUM`). The browser runs with a
+throwaway profile and background networking off, and both go away when the script exits.
+Run it after touching `background.js`, `offscreen/`, `ocr/` or the popup. To test another
+copy of the extension, pass `--extension-dir <path>`. This is a local gate for now. It
+stays out of CI until a CI run shows the runner's browser loading an unpacked extension.
+
 ## OCR: bundled, local, no CDN
 
 `vendor/tesseract/` and `tessdata/` ship the actual OCR engine and English language model,
