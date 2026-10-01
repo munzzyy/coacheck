@@ -175,7 +175,16 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
+def _tolerate_unencodable_output() -> None:
+    # A Windows redirect writes cp1252, which has no beta or >= sign to print.
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(errors="backslashreplace")
+
+
 def main(argv: list[str] | None = None) -> int:
+    _tolerate_unencodable_output()
     parser = build_parser()
     args = parser.parse_args(argv)
     if args.cmd == "parse" and (args.recon_water is None) != (args.dose is None):

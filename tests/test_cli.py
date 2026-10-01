@@ -3,11 +3,17 @@
 import contextlib
 import io
 import json
+import os
+import subprocess
+import sys
 import unittest
+from pathlib import Path
 from unittest import mock
 
 from coacheck import cli
 from tests._helpers import fixture_path, fixture_text
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
 def _run(argv):
@@ -139,6 +145,47 @@ class ParseCommand(unittest.TestCase):
             code, _out, err = _run(["parse"])
         self.assertEqual(code, 1)
         self.assertIn("too large", err)
+
+
+class UnencodableOutput(unittest.TestCase):
+    """A Windows redirect writes through cp1252, which can't encode a Greek
+    letter in a product name, a >= sign, or the U+FFFD an undecodable byte
+    turns into. That used to end in a traceback instead of a report."""
+
+    def _run_subprocess(self, args, stdin, encoding):
+        env = dict(os.environ, PYTHONIOENCODING=encoding)
+        return subprocess.run(
+            [sys.executable, "-m", "coacheck", *args], input=stdin, env=env,
+            cwd=REPO_ROOT, capture_output=True, timeout=60,
+        )
+
+    def test_cp1252_stdout_does_not_crash(self):
+        for stdin in (
+            b"Product: Thymosin \xce\xb24\nPurity: \xe2\x89\xa599.1%\nQuantity: 5 mg\n",
+            b"Purity: 99.1%\nQuantity: 5 mg\nLab: Mer\xffidian\n",
+        ):
+            with self.subTest(stdin=stdin):
+                proc = self._run_subprocess(["parse"], stdin, "cp1252")
+                self.assertEqual(proc.returncode, 0, proc.stderr)
+                self.assertNotIn(b"Traceback", proc.stderr)
+                self.assertIn(b"Red-flag checklist", proc.stdout)
+
+    def test_cp1252_keeps_the_product_name(self):
+        stdin = b"Product: Thymosin \xce\xb24\nQuantity: 5 mg\n"
+        proc = self._run_subprocess(["parse"], stdin, "cp1252")
+        self.assertIn(b"Thymosin", proc.stdout)
+
+    def test_utf8_output_still_prints_the_real_character(self):
+        stdin = b"Product: Thymosin \xce\xb24\nQuantity: 5 mg\n"
+        proc = self._run_subprocess(["parse"], stdin, "utf-8")
+        self.assertEqual(proc.returncode, 0)
+        self.assertIn("Thymosin \u03b24".encode("utf-8"), proc.stdout)
+
+    def test_cp1252_stderr_with_a_non_ascii_path(self):
+        proc = self._run_subprocess(["parse", "/no/such/\u03b2.txt"], b"", "cp1252")
+        self.assertEqual(proc.returncode, 2)
+        self.assertNotIn(b"Traceback", proc.stderr)
+        self.assertIn(b"coacheck:", proc.stderr)
 
 
 class ParseReconstitution(unittest.TestCase):
