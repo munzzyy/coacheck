@@ -1,0 +1,4 @@
+include CHANGELOG.md
+include tests/__init__.py tests/_helpers.py tests/test_*.py
+include tests/fixtures/*.txt
+include tools/check_release_tag.py

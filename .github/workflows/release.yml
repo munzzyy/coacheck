@@ -2,7 +2,8 @@ name: Publish to PyPI
 
 # Triggered by publishing a GitHub Release, not by pushing a tag. A tag can be pushed, moved
 # or deleted by mistake; cutting a release is a deliberate act, and it keeps `git tag` free to
-# mark a commit without that also shipping a package.
+# mark a commit without that also shipping a package. A manual run is only for retrying a failed
+# upload from the release tag, and the tag check refuses any other ref.
 on:
   release:
     types: [published]
@@ -26,6 +27,9 @@ jobs:
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
+
+      - name: Refuse anything but the tag for this version
+        run: python tools/check_release_tag.py
 
       - name: Build sdist and wheel
         run: |

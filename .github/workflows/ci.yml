@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.9", "3.11", "3.12", "3.13"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -91,3 +91,8 @@ jobs:
           /tmp/v/bin/coacheck --version
           /tmp/v/bin/coacheck recon --vial 5 --water 2 --dose 250
           /tmp/v/bin/coacheck parse tests/fixtures/coa_clean.txt --recon-water 2 --dose 250
+      - name: Run the test suite from the unpacked sdist
+        run: |
+          mkdir /tmp/sdist
+          tar -xzf dist/*.tar.gz -C /tmp/sdist --strip-components=1
+          cd /tmp/sdist && python -m unittest discover -s tests -t .

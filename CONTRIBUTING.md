@@ -19,7 +19,7 @@ python -m unittest discover -s tests -t .
 
 That's the whole suite: parser tests, math tests (hand-verified expected numbers), red-flag
 checklist tests, and CLI tests, plus a set of synthetic COA fixtures in `tests/fixtures/`. CI
-runs the same command across Linux, macOS, and Windows on Python 3.9 through 3.13.
+runs the same command across Linux, macOS, and Windows on Python 3.9 through 3.14.
 
 ## Adding a label variant to the parser
 
