@@ -20,6 +20,11 @@
   `Laboratory Name`, `Date of Test` and `Testing Date`.
 - The CLI no longer crashes with a UnicodeEncodeError when stdout can't encode the report,
   as with a cp1252 redirect on Windows. Characters it can't encode print as escapes.
+- The extension enlarges a small crop up to 3x before OCR. Text at 10 to 12 px on a 1x screen
+  used to lose the purity, and once read a net content of 91.5% as 915%.
+- The extension's results panel can be used from the keyboard and is labeled for screen
+  readers: a real Close button, named inputs, a labeled region, live updates for the
+  calculator, focus on open, and Esc to close it on the page.
 - An end-to-end smoke test runs the real extension in headless Chromium (`npm run e2e`).
 - A manual run of the release workflow can no longer publish from a branch. Only the tag
   matching the package version publishes.

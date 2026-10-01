@@ -163,8 +163,9 @@ engine is pinned to match the Python package exactly.
   vendor documents vary ("Purity", "HPLC Purity", "Purity (HPLC)", colon, equals or dash
   separators, case-insensitive). It also reads two-column table rows with nothing but
   whitespace between label and value, which is what `pdftotext -layout` and the extension's OCR
-  produce. Purity bounds written as words ("NLT 98.0%", "min. 98.0%") count the same as `>=`,
-  and a mass in mcg, ug or g is normalized to mg. See [docs/checks.md](docs/checks.md) for the
+  produce. On a table with a Specification column next to a Result column it reads the
+  measured result, not the spec bound. Purity bounds written as words ("NLT 98.0%", "min.
+  98.0%") count the same as `>=`, and a mass in mcg, ug or g is normalized to mg. See [docs/checks.md](docs/checks.md) for the
   exact formulas.
 - Computes actual deliverable peptide mass from labeled mass, purity, and (if stated) net
   peptide content, plus the shortfall against the label in both mg and percent.
@@ -200,6 +201,29 @@ engine is pinned to match the Python package exactly.
 - `3` - only with `--fail-on warn` or `--fail-on fail` on `parse`: the run succeeded and the
   checklist came back at or above the level you asked to fail on. Without the flag this code
   never happens.
+
+## Roadmap
+
+What is left needs a decision, an account or a person this repo can't stand in for.
+
+- A PyPI release. The release workflow is ready and only publishes from the tag that matches
+  the package version, but the PyPI side still has to be set up and a release cut. Until then,
+  install from git as shown above.
+- A store listing for the extension. Today it loads only as a temporary add-on in Firefox or
+  an unpacked one in Chrome. Whether it goes on addons.mozilla.org or the Chrome Web Store is
+  still undecided.
+- Whether the math should run on impossible values. A purity or net content over 100% fails
+  the checklist, but the deliverable mass and the syringe draw are still computed from it, as
+  [docs/checks.md](docs/checks.md) describes. A misread decimal point in OCR can produce
+  exactly that kind of number. Two smaller calls go with it: whether CC-DATE should warn on a
+  future date or one it can't read, and whether a second, different purity or mass in the same
+  document should get its own warning.
+- A pass with a real screen reader. The results panel has names, roles and keyboard handling,
+  checked in tests and in headless Chromium, but nobody has used it with NVDA, VoiceOver or
+  Orca yet.
+- OCR on real COA screenshots. The extension's OCR is tested on clean synthetic text, and the
+  public fixtures have to stay synthetic. Real vendor images have compression artifacts and
+  odd layouts, so this needs people to try it on their own documents and report what misreads.
 
 ## Contributing
 
