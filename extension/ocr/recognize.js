@@ -10,7 +10,7 @@
 // remote fallback.
 
 import Tesseract from "../vendor/tesseract/tesseract.esm.min.js";
-import { computeCropRect } from "../shared/crop-math.js";
+import { computeCropRect, ocrUpscaleFactor } from "../shared/crop-math.js";
 import { api } from "../shared/browser-api.js";
 
 const { createWorker, OEM } = Tesseract;
@@ -57,11 +57,14 @@ async function cropToDataUrl(dataUrl, rect, dpr) {
     imageWidth: img.naturalWidth,
     imageHeight: img.naturalHeight,
   });
+  const scale = ocrUpscaleFactor({ width: sw, height: sh, dpr });
   const canvas = document.createElement("canvas");
-  canvas.width = sw;
-  canvas.height = sh;
+  canvas.width = sw * scale;
+  canvas.height = sh * scale;
   const ctx = canvas.getContext("2d");
-  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
   return canvas.toDataURL("image/png");
 }
 

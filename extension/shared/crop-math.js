@@ -42,3 +42,27 @@ export function computeCropRect({ rectCss, dpr, imageWidth, imageHeight }) {
     sh: Math.max(1, farY - sy),
   };
 }
+
+// 3x because the bundled Tesseract drops or misreads fields in 10-13 px text at 1x (91.5% became 915%).
+const OCR_TARGET_SCALE = 3;
+const OCR_MAX_SIDE = 4096;
+const OCR_MAX_PIXELS = 4_000_000;
+
+/**
+ * Whole-number factor to enlarge a crop by before OCR. Never pushes it past OCR_MAX_SIDE or
+ * OCR_MAX_PIXELS, so a large or HiDPI crop gets 1.
+ *
+ * @param {{width: number, height: number, dpr: number}} args - the crop in device pixels,
+ *   and devicePixelRatio at capture time.
+ * @returns {number}
+ */
+export function ocrUpscaleFactor({ width, height, dpr }) {
+  const ratio = Number.isFinite(dpr) && dpr > 0 ? dpr : 1;
+  if (!(width > 0) || !(height > 0)) return 1;
+  const factor = Math.min(
+    OCR_TARGET_SCALE / ratio,
+    OCR_MAX_SIDE / Math.max(width, height),
+    Math.sqrt(OCR_MAX_PIXELS / (width * height)),
+  );
+  return Math.max(1, Math.floor(factor));
+}

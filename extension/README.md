@@ -57,8 +57,9 @@ background.js  --tabs.captureVisibleTab-->  full-tab screenshot (PNG)
         |-- Chrome: relay to a hidden offscreen document (chrome.offscreen) --
         |-- Firefox: run inline - its background page already has a DOM ------
         v
-ocr/recognize.js:  crop to the dragged rect (canvas) -> Tesseract.js (bundled,
-                   local wasm + language data, no network) -> recognized text
+ocr/recognize.js:  crop to the dragged rect and enlarge a small crop (canvas) ->
+                   Tesseract.js (bundled, local wasm + language data, no network)
+                   -> recognized text
         v
 engine/{parser,purity,recon,redflags}.js  (the JS port - see below)
         v
@@ -171,7 +172,10 @@ all expected:
 ## Honest limitations
 
 - **OCR accuracy on real-world photos is genuinely rough.** Clean, high-contrast, screen-
-  rendered text (a vendor's product page, a well-lit scan) OCRs close to perfectly. A blurry
+  rendered text (a vendor's product page, a well-lit scan) OCRs close to perfectly. Small text
+  on a 1x screen is enlarged up to 3x before OCR, which is what lets 10-13 px text read
+  correctly in the smoke test. That test uses clean synthetic text, not real screenshots
+  with JPEG artifacts. A blurry
   phone photo of a printed COA at an angle will not. When OCR does not find COA fields, the
   overlay says so plainly and shows the raw recognized text so you can see why, rather than
   guessing or failing silently.

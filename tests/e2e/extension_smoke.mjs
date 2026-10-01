@@ -181,21 +181,19 @@ async function ocrAt(cdp, sessionId, px, minWidth) {
   })()`);
 }
 
-const OCR_CASES = [
-  { px: 28, minWidth: 330, want: { purity_pct: 99.1, mass_mg: 5 } },
-];
+const OCR_WANT = { purity_pct: 99.1, net_content_pct: 91.5, mass_mg: 5, batch_lot: "RC118-20260214-A" };
+// 10 and 11 px is a COA image shown at normal size on a 1x screen, the size that used to lose fields.
+const OCR_CASES = [10, 11, 12, 13, 28].map((px) => ({ px, minWidth: 330, want: OCR_WANT }));
 
 async function ocrStage(cdp, sessionId, parseCoa) {
   const problems = [];
   for (const { px, minWidth, want } of OCR_CASES) {
     const text = await ocrAt(cdp, sessionId, px, minWidth);
     const coa = parseCoa(text);
-    for (const [field, value] of Object.entries(want)) {
-      if (coa[field] !== value) {
-        problems.push(`OCR at ${px} px: ${field} is ${JSON.stringify(coa[field])}, wanted ${JSON.stringify(value)}`);
-      }
-    }
-    if (problems.length) problems.push(`OCR text at ${px} px:\n${text}`);
+    const wrong = Object.entries(want)
+      .filter(([field, value]) => coa[field] !== value)
+      .map(([field, value]) => `OCR at ${px} px: ${field} is ${JSON.stringify(coa[field])}, wanted ${JSON.stringify(value)}`);
+    if (wrong.length) problems.push(...wrong, `OCR text at ${px} px:\n${text}`);
   }
   return problems;
 }
