@@ -29,8 +29,20 @@ function makeElement(tag) {
     children: [],
     parent: null,
     listeners: new Map(),
+    attributes: new Map(),
+    focusCalls: 0,
     shadow: null,
-    setAttribute() {},
+    get isConnected() {
+      let n = node;
+      while (n.parent) n = n.parent;
+      return n.tagName === "html";
+    },
+    setAttribute(name, value) {
+      node.attributes.set(name, String(value));
+    },
+    focus() {
+      node.focusCalls += 1;
+    },
     setPointerCapture() {},
     releasePointerCapture() {},
     addEventListener(type, fn) {
@@ -101,9 +113,15 @@ function makeDom() {
   };
 }
 
-function makeSandbox() {
+function makeSandbox({ response = { ok: true, result: { coa: {}, flags: [] } } } = {}) {
   const document = makeDom();
   const windowListeners = new Map();
+  const panels = [];
+  const panel = (kind) => (_payload, opts) => {
+    const node = makeElement("div");
+    panels.push({ kind, node, opts });
+    return node;
+  };
   const sandbox = {
     document,
     devicePixelRatio: 1,
@@ -118,14 +136,13 @@ function makeSandbox() {
     },
     chrome: {
       runtime: {
-        // Whatever the background does, the overlay only cares that it resolved.
-        sendMessage: async () => ({ ok: true, result: { coa: {}, flags: [] } }),
+        sendMessage: async () => response,
       },
     },
     CoacheckRender: {
       buildLoadingBadge: () => makeElement("div"),
-      buildResultsPanel: () => makeElement("div"),
-      buildErrorPanel: () => makeElement("div"),
+      buildResultsPanel: panel("results"),
+      buildErrorPanel: panel("error"),
     },
     setTimeout,
     clearTimeout,
@@ -136,7 +153,9 @@ function makeSandbox() {
   return {
     context,
     document,
+    panels,
     hosts: () => document.querySelectorAll(`#${HOST_ID}`),
+    listenerCount: (type) => (windowListeners.get(type) || []).length,
     fireWindow(type, event) {
       for (const fn of [...(windowListeners.get(type) || [])]) fn(event);
     },
@@ -191,4 +210,64 @@ test("a sub-6px drag is treated as a stray click and clears the veil", async () 
   env.fireWindow("pointerup", pointerEvent(12, 12));
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(env.hosts().length, 0);
+});
+
+async function selectRegion(env) {
+  const veil = env.hosts()[0].shadow.children[0];
+  veil.dispatch("pointerdown", pointerEvent(10, 10));
+  env.fireWindow("pointerup", pointerEvent(140, 120));
+  await new Promise((resolve) => setImmediate(resolve));
+}
+
+test("the results panel takes focus when it opens", async () => {
+  const env = makeSandbox();
+  env.inject();
+  await selectRegion(env);
+  assert.equal(env.panels.length, 1);
+  assert.equal(env.panels[0].kind, "results");
+  assert.equal(env.panels[0].node.focusCalls, 1);
+});
+
+test("the error panel takes focus when it opens", async () => {
+  const env = makeSandbox({ response: { ok: false, error: "capture failed" } });
+  env.inject();
+  await selectRegion(env);
+  assert.equal(env.panels.length, 1);
+  assert.equal(env.panels[0].kind, "error");
+  assert.equal(env.panels[0].node.focusCalls, 1);
+});
+
+test("Escape closes the results panel and drops its key listener", async () => {
+  const env = makeSandbox();
+  env.inject();
+  await selectRegion(env);
+  assert.equal(env.hosts().length, 1);
+  env.fireWindow("keydown", { key: "Tab" });
+  assert.equal(env.hosts().length, 1, "only Escape closes it");
+  env.fireWindow("keydown", { key: "Escape" });
+  assert.equal(env.hosts().length, 0);
+  assert.equal(env.listenerCount("keydown"), 0);
+});
+
+test("the close button drops the Escape listener too", async () => {
+  const env = makeSandbox();
+  env.inject();
+  await selectRegion(env);
+  env.panels[0].opts.onClose();
+  assert.equal(env.hosts().length, 0);
+  assert.equal(env.listenerCount("keydown"), 0);
+});
+
+test("a panel replaced by a new selection lets go of its key listener", async () => {
+  const env = makeSandbox();
+  env.inject();
+  await selectRegion(env);
+  env.inject();
+  await selectRegion(env);
+  assert.equal(env.hosts().length, 1);
+  env.fireWindow("keydown", { key: "a" });
+  assert.equal(env.listenerCount("keydown"), 1, "only the live panel still listens");
+  env.fireWindow("keydown", { key: "Escape" });
+  assert.equal(env.hosts().length, 0);
+  assert.equal(env.listenerCount("keydown"), 0);
 });

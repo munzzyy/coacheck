@@ -19,7 +19,7 @@ checks do and don't do.
 2. Drag a box over the COA. Esc cancels.
 3. It captures that region, OCRs it locally, and shows the parsed fields, purity math, a
    reconstitution mini-calculator (enter water + dose to see the draw), and the red-flag
-   checklist as an overlay on the page. Click the ✕ to dismiss it.
+   checklist as an overlay on the page. Click the ✕ or press Esc to dismiss it.
 
 No COA handy, or OCR misreading a photo? Open the toolbar popup and paste the text in
 directly - same engine, same output, no OCR involved.

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <style>
@@ -56,12 +56,12 @@
     <button class="go" id="select">select a COA region on this page</button>
     <div class="hint">drag a box over the COA, then esc to cancel or click the ✕ when you're done</div>
 
-    <div class="divider">or paste the text directly</div>
+    <label class="divider" for="text">or paste the text directly</label>
     <textarea id="text" placeholder="paste the COA text here"></textarea>
     <button class="secondary" id="analyze">analyze pasted text</button>
 
     <div id="result"></div>
-    <div id="err"></div>
+    <div id="err" role="alert"></div>
   </main>
   <footer>
     <a href="../about/about.html" target="_blank" rel="noopener">what's read / permissions</a>

@@ -1,4 +1,4 @@
-// Region-select + results overlay, injected on demand (toolbar click or the keyboard
+// Region-select + results overlay, injected on demand (the popup's button or the keyboard
 // shortcut) via chrome.scripting.executeScript - never a persistent content script, so
 // there's nothing running on a page the user hasn't asked to read. Loaded together with
 // shared/render-dom.js (same files array, same global scope), which is what actually
@@ -133,8 +133,24 @@
     Object.assign(root.host.style, { top: "16px", right: "16px" });
     root.append(window.CoacheckRender.buildLoadingBadge());
 
+    function close() {
+      window.removeEventListener("keydown", onKeyDown, true);
+      removeHost();
+    }
+
+    function onKeyDown(e) {
+      // A later selection already replaced this panel, so this listener is stale.
+      if (!root.host.isConnected) {
+        window.removeEventListener("keydown", onKeyDown, true);
+        return;
+      }
+      if (e.key === "Escape") close();
+    }
+    window.addEventListener("keydown", onKeyDown, true);
+
     function showPanel(node) {
       root.replaceChildren(node);
+      node.focus();
     }
 
     try {
@@ -145,10 +161,10 @@
       });
       window.__coacheckSelecting = false;
       if (!resp || !resp.ok) throw new Error(resp?.error || "processing failed");
-      showPanel(window.CoacheckRender.buildResultsPanel(resp.result, { onClose: removeHost }));
+      showPanel(window.CoacheckRender.buildResultsPanel(resp.result, { onClose: close }));
     } catch (err) {
       window.__coacheckSelecting = false;
-      showPanel(window.CoacheckRender.buildErrorPanel(err?.message || err, { onClose: removeHost }));
+      showPanel(window.CoacheckRender.buildErrorPanel(err?.message || err, { onClose: close }));
     }
   }
 

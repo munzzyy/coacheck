@@ -75,6 +75,19 @@
     return node;
   }
 
+  function buildCloseButton(opts) {
+    return el("button", {
+      type: "button",
+      "aria-label": "Close",
+      text: "✕",
+      style: {
+        float: "right", cursor: "pointer", color: "#8b98a5", padding: "0 2px",
+        background: "none", border: "0", font: "inherit",
+      },
+      onClick: () => opts?.onClose?.(),
+    });
+  }
+
   function buildFieldsSection(coa) {
     const rows = FIELD_LABELS.map(([name, label]) =>
       el("div", { style: { display: "flex", gap: "8px", padding: "2px 0" } }, [
@@ -159,7 +172,7 @@
     }
 
     const hasActual = !!purity && Number.isFinite(purity.actual_mg);
-    const basisSelect = el("select", null, [
+    const basisSelect = el("select", { "aria-label": "mass to compute from" }, [
       hasActual
         ? el("option", { value: "actual", text: `actual ${purity.actual_mg.toFixed(3)} mg` })
         : null,
@@ -176,17 +189,22 @@
 
     const waterInput = el("input", {
       type: "number", min: "0", step: "any", placeholder: "water mL",
+      "aria-label": "water (mL)",
       style: { width: "84px" },
     });
     const doseInput = el("input", {
       type: "number", min: "0", step: "any", placeholder: "dose",
+      "aria-label": "dose",
       style: { width: "84px" },
     });
-    const unitSelect = el("select", null, [
+    const unitSelect = el("select", { "aria-label": "dose unit" }, [
       el("option", { value: "mcg", text: "mcg" }),
       el("option", { value: "mg", text: "mg" }),
     ]);
-    const output = el("div", { style: { marginTop: "6px", color: "#8b98a5", fontSize: "11.5px" } });
+    const output = el("div", {
+      "aria-live": "polite",
+      style: { marginTop: "6px", color: "#8b98a5", fontSize: "11.5px" },
+    });
 
     let debounceTimer = null;
     async function recompute() {
@@ -266,11 +284,7 @@
     const { coa, flags, purity, purityError, ocrText } = payload;
     const empty = ocrText !== null && ocrText !== undefined && fieldsAreAllEmpty(coa);
 
-    const closeBtn = el("span", {
-      text: "✕",
-      style: { float: "right", cursor: "pointer", color: "#8b98a5", padding: "0 2px" },
-      onClick: () => opts?.onClose?.(),
-    });
+    const closeBtn = buildCloseButton(opts);
 
     const children = [
       el("div", null, [
@@ -302,7 +316,11 @@
     }
 
     return el("div", {
+      role: "region",
+      "aria-label": "coacheck results",
+      tabindex: "-1",
       style: {
+        outline: "none",
         font: "13px/1.45 ui-sans-serif, system-ui, sans-serif",
         background: "#1a2027", color: "#dde4ea", border: "1px solid #2a323c",
         borderRadius: "10px", padding: "12px 14px", width: "380px", maxWidth: "92vw",
@@ -313,13 +331,13 @@
 
   /** Minimal panel for a hard failure (capture/OCR/engine threw). */
   function buildErrorPanel(message, opts) {
-    const closeBtn = el("span", {
-      text: "✕",
-      style: { float: "right", cursor: "pointer", color: "#8b98a5", padding: "0 2px" },
-      onClick: () => opts?.onClose?.(),
-    });
+    const closeBtn = buildCloseButton(opts);
     return el("div", {
+      role: "alert",
+      "aria-label": "coacheck error",
+      tabindex: "-1",
       style: {
+        outline: "none",
         font: "13px/1.45 ui-sans-serif, system-ui, sans-serif",
         background: "#1a2027", color: "#dde4ea", border: "1px solid #5a2a2e",
         borderRadius: "10px", padding: "12px 14px", width: "340px", maxWidth: "92vw",
@@ -335,6 +353,7 @@
   /** A small "reading..." placeholder shown while capture/OCR is in flight. */
   function buildLoadingBadge() {
     return el("div", {
+      role: "status",
       style: {
         font: "12.5px ui-sans-serif, system-ui, sans-serif", background: "#1a2027",
         color: "#dde4ea", border: "1px solid #2a323c", borderRadius: "8px",

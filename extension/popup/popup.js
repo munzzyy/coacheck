@@ -38,6 +38,7 @@ $("analyze").addEventListener("click", async () => {
     const result = await send({ cmd: "parse-text", text });
     const panel = window.CoacheckRender.buildResultsPanel(result, { onClose: clearOutput });
     $("result").replaceChildren(panel);
+    panel.focus();
   } catch (err) {
     $("err").textContent = String(err?.message || err);
   } finally {
