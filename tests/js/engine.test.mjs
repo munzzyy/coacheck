@@ -120,8 +120,27 @@ test("parseCoa: a molar mass is not the vial mass", () => {
     "Mass: 1419.5 g/mol\nPurity: 99.1%\nNet Weight: 5 mg\n",
     "Weight: 1419.53 g / mol\nQuantity: 5 mg\n",
     "Weight: 1419.53 g mol-1\nQuantity: 5 mg\n",
+    "Weight: 1419.53 g/mole\nQuantity: 5 mg\n",
+    "Weight: 1419.53 g mol^-1\nQuantity: 5 mg\n",
+    "Weight: 1419.53 g mol⁻¹\nQuantity: 5 mg\n",
+    "Weight: 1419.53 g·mol⁻¹\nQuantity: 5 mg\n",
+    "Weight: 1419.53 g mol\nQuantity: 5 mg\n",
   ]) {
     assert.equal(parseCoa(text).mass_mg, 5, text);
+  }
+});
+
+test("parseCoa: a label starting with mol keeps the mass", () => {
+  // OCR runs a header row like this together with single spaces.
+  for (const [text, mass] of [
+    ["Net Weight: 5 mg Molecular Weight: 1419.53 g/mol\n", 5],
+    ["Quantity: 5 mg Molecular Weight: 1419.53 g/mol\n", 5],
+    ["Net Weight: 5 mg Mol. Wt: 1419.5\n", 5],
+    ["Net Weight: 5 mg Mol Wt 1419.5\n", 5],
+    ["Net Weight: 2 mg Molecular formula C62H98N16O22\n", 2],
+    ["Net Weight: 5 mg molar mass 1419.5\n", 5],
+  ]) {
+    assert.equal(parseCoa(text).mass_mg, mass, text);
   }
 });
 

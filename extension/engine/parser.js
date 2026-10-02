@@ -82,9 +82,12 @@ const PCT_CELL = new RegExp(`^${QUALIFIER}${DECIMAL_VALUE}\\s*%$`, "i");
 const THOUSANDS_GROUPED = /^\d{1,3}(?:,\d{3})+$/;
 
 // Vials get labeled in more than mg. Everything is normalized to mg so the purity and
-// reconstitution math downstream only ever sees one unit. A molar mass ("1419.53 g/mol") is
-// not a vial mass.
-const MASS_UNIT = `\\s*(${MASS_UNITS})\\b(?!\\s*(?:/\\s*)?mol)`;
+// reconstitution math downstream only ever sees one unit. A molar mass ("1419.53 g/mol",
+// "g mol-1") is not a vial mass. Without the slash, "mol" needs its -1 or the end of the text
+// after it, or "5 mg Molecular Weight: ..." loses the 5 mg.
+const MOL_EXPONENT = `(?:\\^\\s*)?[-${String.fromCharCode(0x2212, 0x207b)}]\\s*[1${String.fromCharCode(0x00b9)}]`;
+const PER_MOL = `(?!\\s*/\\s*mol|\\s*(?:${String.fromCharCode(0x00b7)}\\s*)?mol\\s*(?:${MOL_EXPONENT}|$))`;
+const MASS_UNIT = `\\s*(${MASS_UNITS})\\b${PER_MOL}`;
 
 const MASS_UNIT_TO_MG = {
   mg: 1.0,

@@ -436,9 +436,27 @@ class MassIsNotAPercentage(unittest.TestCase):
             "Mass: 1419.5 g/mol\nPurity: 99.1%\nNet Weight: 5 mg\n",
             "Weight: 1419.53 g / mol\nQuantity: 5 mg\n",
             "Weight: 1419.53 g mol-1\nQuantity: 5 mg\n",
+            "Weight: 1419.53 g/mole\nQuantity: 5 mg\n",
+            "Weight: 1419.53 g mol^-1\nQuantity: 5 mg\n",
+            "Weight: 1419.53 g mol\u207b\u00b9\nQuantity: 5 mg\n",
+            "Weight: 1419.53 g\u00b7mol\u207b\u00b9\nQuantity: 5 mg\n",
+            "Weight: 1419.53 g mol\nQuantity: 5 mg\n",
         ):
             with self.subTest(text=text):
                 self.assertEqual(parse_coa(text).mass_mg, 5.0)
+
+    def test_a_label_starting_with_mol_keeps_the_mass(self):
+        # OCR runs a header row like this together with single spaces.
+        for text, mass in (
+            ("Net Weight: 5 mg Molecular Weight: 1419.53 g/mol\n", 5.0),
+            ("Quantity: 5 mg Molecular Weight: 1419.53 g/mol\n", 5.0),
+            ("Net Weight: 5 mg Mol. Wt: 1419.5\n", 5.0),
+            ("Net Weight: 5 mg Mol Wt 1419.5\n", 5.0),
+            ("Net Weight: 2 mg Molecular formula C62H98N16O22\n", 2.0),
+            ("Net Weight: 5 mg molar mass 1419.5\n", 5.0),
+        ):
+            with self.subTest(text=text):
+                self.assertEqual(parse_coa(text).mass_mg, mass)
 
     def test_net_peptide_content_without_a_percent_sign_still_parses(self):
         self.assertEqual(parse_coa("Net Peptide Content: 82.3\n").net_content_pct, 82.3)

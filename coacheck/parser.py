@@ -87,8 +87,14 @@ _THOUSANDS_GROUPED = re.compile(r"^[0-9]{1,3}(?:,[0-9]{3})+$")
 
 # Vials get labeled in more than mg. Everything is normalized to mg so the
 # purity and reconstitution math downstream only ever sees one unit. A molar
-# mass ("1419.53 g/mol") is not a vial mass.
-_MASS_UNIT = r"\s*(" + _MASS_UNITS + r")\b(?!\s*(?:/\s*)?mol)"
+# mass ("1419.53 g/mol", "g mol-1") is not a vial mass. Without the slash,
+# "mol" needs its -1 or the end of the text after it, or "5 mg Molecular
+# Weight: ..." loses the 5 mg.
+_MOL_EXPONENT = r"(?:\^\s*)?[-" + chr(0x2212) + chr(0x207B) + r"]\s*[1" + chr(0x00B9) + r"]"
+_PER_MOL = (
+    r"(?!\s*/\s*mol|\s*(?:" + chr(0x00B7) + r"\s*)?mol\s*(?:" + _MOL_EXPONENT + r"|$))"
+)
+_MASS_UNIT = r"\s*(" + _MASS_UNITS + r")\b" + _PER_MOL
 
 _MASS_UNIT_TO_MG = {
     "mg": 1.0,

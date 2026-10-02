@@ -148,9 +148,9 @@ async function popupPasteStage(cdp, sessionId) {
 }
 
 // Same message background.js sends the offscreen document for a captured screenshot.
-async function ocrAt(cdp, sessionId, px, minWidth) {
+async function ocrAt(cdp, sessionId, px, minWidth, lines) {
   return cdp.evaluate(sessionId, `(async () => {
-    const lines = ${JSON.stringify(FIELD_LINES)};
+    const lines = ${JSON.stringify(lines)};
     const font = "${px}px sans-serif";
     const pad = Math.ceil(${px} * 0.6);
     const lineHeight = Math.ceil(${px} * 1.5);
@@ -182,18 +182,23 @@ async function ocrAt(cdp, sessionId, px, minWidth) {
 }
 
 const OCR_WANT = { purity_pct: 99.1, net_content_pct: 91.5, mass_mg: 5, batch_lot: "RC118-20260214-A" };
+// Tesseract closes up the gap in a header row, so "Molecular" lands right after the vial mass.
+const HEADER_LINES = [`Net Weight: 5 mg${" ".repeat(12)}Molecular Weight: 1419.53 g/mol`];
 // 10 and 11 px is a COA image shown at normal size on a 1x screen, the size that used to lose fields.
-const OCR_CASES = [10, 11, 12, 13, 28].map((px) => ({ px, minWidth: 330, want: OCR_WANT }));
+const OCR_CASES = [
+  ...[10, 11, 12, 13, 28].map((px) => ({ name: `${px} px`, px, lines: FIELD_LINES, want: OCR_WANT })),
+  ...[14, 28].map((px) => ({ name: `header row ${px} px`, px, lines: HEADER_LINES, want: { mass_mg: 5 } })),
+];
 
 async function ocrStage(cdp, sessionId, parseCoa) {
   const problems = [];
-  for (const { px, minWidth, want } of OCR_CASES) {
-    const text = await ocrAt(cdp, sessionId, px, minWidth);
+  for (const { name, px, lines, want } of OCR_CASES) {
+    const text = await ocrAt(cdp, sessionId, px, 330, lines);
     const coa = parseCoa(text);
     const wrong = Object.entries(want)
       .filter(([field, value]) => coa[field] !== value)
-      .map(([field, value]) => `OCR at ${px} px: ${field} is ${JSON.stringify(coa[field])}, wanted ${JSON.stringify(value)}`);
-    if (wrong.length) problems.push(...wrong, `OCR text at ${px} px:\n${text}`);
+      .map(([field, value]) => `OCR at ${name}: ${field} is ${JSON.stringify(coa[field])}, wanted ${JSON.stringify(value)}`);
+    if (wrong.length) problems.push(...wrong, `OCR text at ${name}:\n${text}`);
   }
   return problems;
 }
@@ -251,7 +256,7 @@ async function main() {
     problems.push(...stage1);
 
     const stage2 = await ocrStage(cdp, popup, parseCoa);
-    console.log(`${stage2.length ? "FAIL" : "ok  "}  offscreen OCR (${OCR_CASES.map((c) => `${c.px} px`).join(", ")})`);
+    console.log(`${stage2.length ? "FAIL" : "ok  "}  offscreen OCR (${OCR_CASES.map((c) => c.name).join(", ")})`);
     problems.push(...stage2);
   } catch (err) {
     problems.push(String(err?.stack || err));

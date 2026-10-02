@@ -88,6 +88,15 @@
   { "name": "parse_net_content_in_mg_is_the_vial_mass", "type": "parse", "text": "Purity: 99.1%\nNet Content: 10 mg\n" },
   { "name": "parse_weight_in_g_per_mol_is_not_the_vial_mass", "type": "parse", "text": "Weight: 1419.53 g/mol\nPurity: 99.1%\nQuantity: 5 mg\n" },
   { "name": "parse_mass_in_g_per_mol_is_not_the_vial_mass", "type": "parse", "text": "Mass: 1419.5 g/mol\nPurity: 99.1%\nNet Weight: 5 mg\n" },
+  { "name": "parse_molar_mass_with_an_exponent", "type": "parse", "text": "Weight: 1419.53 g mol-1\nQuantity: 5 mg\n" },
+  { "name": "parse_molar_mass_with_middle_dot_and_superscript", "type": "parse", "text": "Weight: 1419.53 g\u00b7mol\u207b\u00b9\nQuantity: 5 mg\n" },
+  {
+    "name": "parse_mass_then_molecular_weight_on_one_line",
+    "type": "parse",
+    "text": "Net Weight: 5 mg Molecular Weight: 1419.53 g/mol\nPurity: 99.1%\nMethod: HPLC\n"
+  },
+  { "name": "parse_mass_then_mol_wt_on_one_line", "type": "parse", "text": "Net Weight: 5 mg Mol. Wt: 1419.5\n" },
+  { "name": "parse_mass_then_molecular_formula_on_one_line", "type": "parse", "text": "Net Weight: 2 mg Molecular formula C62H98N16O22\n" },
   { "name": "parse_net_peptide_content_without_percent_sign", "type": "parse", "text": "Net Peptide Content: 82.3\n" },
   { "name": "parse_wording_peptide_purity_hplc", "type": "parse", "text": "Peptide Purity (HPLC): 99.3%\n" },
   { "name": "parse_wording_purity_by_method", "type": "parse", "text": "Purity by HPLC: 99.3%\n" },
