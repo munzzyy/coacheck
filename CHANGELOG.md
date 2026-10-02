@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-02
+
 - New CC-MASS check. A COA with no usable mass or quantity used to pass all seven checks even
   though the purity and reconstitution math both need the mass.
 - A purity stated only as an upper bound (`<98%` or `NMT 98%`) no longer feeds the purity math.
@@ -50,5 +52,6 @@ First tagged version, under MIT.
 - A Firefox and Chrome extension that OCRs a dragged region of the page locally and runs a
   JS port of the same engine, pinned to the Python one by a parity test.
 
-[Unreleased]: https://github.com/munzzyy/coacheck/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/munzzyy/coacheck/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/munzzyy/coacheck/tree/v0.2.0
 [0.1.0]: https://github.com/munzzyy/coacheck/tree/v0.1.0

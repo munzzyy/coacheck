@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "coacheck"
-version = "0.1.0"
+version = "0.2.0"
 description = "Parse a research peptide Certificate of Analysis, compute real deliverable purity, run a red-flag checklist, and do reconstitution math. Pure stdlib."
 readme = "README.md"
 license = "GPL-3.0-or-later"
