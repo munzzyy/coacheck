@@ -24,6 +24,20 @@ checks do and do not do.
 No COA handy, or OCR misreading a photo? Open the toolbar popup and paste the text in
 directly - same engine, same output, no OCR involved.
 
+### Pages it can't read
+
+Browsers keep extensions off some pages, so there is nothing to select on these:
+
+- the browser's own pages: `chrome://` and `about:` pages, settings, the new tab page
+- the extension stores (Chrome Web Store, addons.mozilla.org) and other extensions' pages
+- local `file://` pages in Chrome, unless **Allow access to file URLs** is on for coacheck in
+  `chrome://extensions`
+
+On one of these the popup says it can't read the page and stays open, and the paste box still
+works. The keyboard shortcut has no popup to say it in, so it puts a red **!** on the toolbar
+button for that tab, with the reason in its tooltip. The badge clears when the tab goes to
+another page.
+
 ## Loading it
 
 ### Firefox
@@ -115,9 +129,10 @@ npm run e2e
 drives it over the DevTools protocol with nothing but the `fetch` and `WebSocket` built into
 Node. It pastes `tests/fixtures/coa_clean.txt` into the popup and checks the result that
 comes back through the real `background.js`. Then it draws the field lines from that fixture
-onto a canvas and OCRs them through the offscreen document and the bundled Tesseract. The
-drag-select overlay and `captureVisibleTab` are not covered because `activeTab` needs a real
-click.
+onto a canvas and OCRs them through the offscreen document and the bundled Tesseract. Last it
+opens the popup as a tab of its own, a page Chromium keeps the extension out of, clicks the
+select button and checks that the popup stays open and says why. The drag-select overlay and
+`captureVisibleTab` are not covered because `activeTab` needs a real click.
 
 It needs Chromium (`/usr/bin/chromium`, or set `CHROMIUM`). The browser runs with a
 throwaway profile and background networking off, and both go away when the script exits.

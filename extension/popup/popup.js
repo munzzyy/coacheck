@@ -2,6 +2,8 @@
 
 const api = globalThis.browser ?? globalThis.chrome;
 const $ = (id) => document.getElementById(id);
+const UNREADABLE = "Extensions can't read this page, so there's nothing to select here. "
+  + "Paste the COA text below instead.";
 
 async function send(msg) {
   const resp = await api.runtime.sendMessage(msg);
@@ -18,8 +20,13 @@ function clearOutput() {
 $("select").addEventListener("click", async () => {
   clearOutput();
   try {
-    await send({ cmd: "start-select" });
-    window.close(); // the drag + results now happen on the page itself
+    const { started } = await send({ cmd: "start-select" });
+    if (started) {
+      window.close(); // the drag + results now happen on the page itself
+      return;
+    }
+    $("err").textContent = UNREADABLE;
+    $("text").focus();
   } catch (err) {
     $("err").textContent = String(err?.message || err);
   }

@@ -28,6 +28,10 @@
   readers. It has a real Close button, named inputs, a labeled region and live updates for
   the calculator. It takes focus when it opens and Esc closes it on the page.
 - An end-to-end smoke test runs the real extension in headless Chromium (`npm run e2e`).
+- On a page browsers keep extensions off, like `chrome://` pages or an extension store, the
+  select button used to close the popup and do nothing. The popup now stays open, says it
+  can't read the page and points at the paste box. The keyboard shortcut puts a **!** on the
+  toolbar button for that tab instead.
 - A manual run of the release workflow can no longer publish from a branch. Only the tag
   matching the package version publishes.
 - The sdist now carries the test helpers and fixtures, so its test suite runs.

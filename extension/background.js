@@ -17,6 +17,8 @@ import { recognizeRegion } from "./ocr/recognize.js";
 
 const OFFSCREEN_URL = "offscreen/offscreen.html";
 const HAS_OFFSCREEN = typeof api.offscreen !== "undefined";
+// The shortcut has no popup to explain a failure in, so the toolbar button carries it.
+const UNREADABLE_TITLE = "coacheck can't read this page. Click here and paste the COA text instead.";
 
 async function ensureOffscreenDocument() {
   if (await api.offscreen.hasDocument()) return;
@@ -54,7 +56,7 @@ function buildParseResult(coaText) {
 }
 
 async function triggerSelect(tab) {
-  if (!tab || typeof tab.id !== "number") return;
+  if (!tab || typeof tab.id !== "number") return { started: false, error: "no active tab" };
   try {
     // Two files, one shared global scope (executeScript's files array behaves like
     // sequential classic <script> tags) - render-dom.js's helpers are what overlay.js
@@ -63,9 +65,20 @@ async function triggerSelect(tab) {
       target: { tabId: tab.id },
       files: ["shared/render-dom.js", "content/overlay.js"],
     });
-  } catch {
-    // Restricted page (chrome://, about:, an extension store) - nothing to inject into.
+    return { started: true };
+  } catch (err) {
+    // Restricted page (chrome://, about:, an extension store, another extension's page).
+    return { started: false, error: String(err?.message || err) };
   }
+}
+
+// Both browsers drop a tab's own badge and title when it navigates, so this clears itself.
+function markUnreadable(tabId) {
+  return Promise.all([
+    api.action.setBadgeText({ tabId, text: "!" }),
+    api.action.setBadgeBackgroundColor({ tabId, color: "#e06c75" }),
+    api.action.setTitle({ tabId, title: UNREADABLE_TITLE }),
+  ]);
 }
 
 api.commands.onCommand.addListener(async (command, tab) => {
@@ -73,7 +86,8 @@ api.commands.onCommand.addListener(async (command, tab) => {
   if (!tab) {
     [tab] = await api.tabs.query({ active: true, currentWindow: true });
   }
-  await triggerSelect(tab);
+  const { started } = await triggerSelect(tab);
+  if (!started && typeof tab?.id === "number") await markUnreadable(tab.id);
 });
 
 api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
@@ -85,8 +99,7 @@ api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     switch (msg.cmd) {
       case "start-select": {
         const [tab] = await api.tabs.query({ active: true, currentWindow: true });
-        await triggerSelect(tab);
-        return { started: true };
+        return triggerSelect(tab);
       }
 
       case "process-region": {

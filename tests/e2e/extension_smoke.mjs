@@ -123,7 +123,7 @@ async function openExtensionPage(cdp, url) {
   await waitFor(`${url} to load`, async () => cdp.evaluate(
     sessionId, `location.href === ${JSON.stringify(url)} && document.readyState === "complete"`,
   ));
-  return sessionId;
+  return { targetId, sessionId };
 }
 
 async function popupPasteStage(cdp, sessionId) {
@@ -179,6 +179,27 @@ async function ocrAt(cdp, sessionId, px, minWidth, lines) {
     if (!resp || !resp.ok) throw new Error(resp?.error || "no response from the offscreen document");
     return resp.text;
   })()`);
+}
+
+// Opened as a tab, the popup is itself the active tab, a page Chromium keeps extensions out of.
+async function restrictedPageStage(cdp, popupUrl) {
+  const { targetId, sessionId } = await openExtensionPage(cdp, popupUrl);
+  const problems = [];
+  const resp = await cdp.evaluate(sessionId, `chrome.runtime.sendMessage({ cmd: "start-select" })`);
+  if (resp?.result?.started !== false || !resp.result.error) {
+    problems.push(`start-select on a restricted page answered ${JSON.stringify(resp)}`);
+  }
+  await cdp.evaluate(sessionId, `document.getElementById("select").click()`);
+  await sleep(1000);
+  const { targetInfos } = await cdp.send("Target.getTargets");
+  if (!targetInfos.some((t) => t.targetId === targetId)) {
+    problems.push("the popup closed itself on a page the overlay can't go into");
+    return problems;
+  }
+  const err = await cdp.evaluate(sessionId, `document.getElementById("err").textContent`);
+  if (!/paste the COA text/i.test(err)) problems.push(`popup error on a restricted page: ${JSON.stringify(err)}`);
+  await cdp.send("Target.closeTarget", { targetId });
+  return problems;
 }
 
 const OCR_WANT = { purity_pct: 99.1, net_content_pct: 91.5, mass_mg: 5, batch_lot: "RC118-20260214-A" };
@@ -250,7 +271,8 @@ async function main() {
       return targetInfos.some((t) => t.type === "service_worker" && t.url === workerUrl);
     }, 10_000);
 
-    const popup = await openExtensionPage(cdp, `chrome-extension://${extensionId}/popup/popup.html`);
+    const popupUrl = `chrome-extension://${extensionId}/popup/popup.html`;
+    const { sessionId: popup } = await openExtensionPage(cdp, popupUrl);
     const stage1 = await popupPasteStage(cdp, popup);
     console.log(`${stage1.length ? "FAIL" : "ok  "}  popup paste path through background.js`);
     problems.push(...stage1);
@@ -258,6 +280,10 @@ async function main() {
     const stage2 = await ocrStage(cdp, popup, parseCoa);
     console.log(`${stage2.length ? "FAIL" : "ok  "}  offscreen OCR (${OCR_CASES.map((c) => c.name).join(", ")})`);
     problems.push(...stage2);
+
+    const stage3 = await restrictedPageStage(cdp, popupUrl);
+    console.log(`${stage3.length ? "FAIL" : "ok  "}  select on a page extensions can't read`);
+    problems.push(...stage3);
   } catch (err) {
     problems.push(String(err?.stack || err));
   } finally {
