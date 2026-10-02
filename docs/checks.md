@@ -1,6 +1,6 @@
 # Checks reference
 
-What each red-flag check looks for, and the purity/reconstitution formulas behind the math.
+What each red-flag check looks for and the purity/reconstitution formulas behind the math.
 This is informational tooling: nothing here endorses, recommends, or facilitates sourcing any
 compound, and nothing here is medical advice.
 
@@ -17,24 +17,27 @@ shortfall_pct = shortfall_mg / labeled_mg * 100
 
 Purity and net peptide content are two different figures. HPLC purity is what fraction of the
 peptide-related chromatography peak is the correct sequence. Net peptide content is what
-fraction of the vial's total powder mass is peptide at all, as opposed to water or counterion
-salt left from synthesis. When a COA states both, this tool multiplies them together. When only
-purity is stated - the common case - it uses purity alone, which is the simplification most
-vendor-published numbers imply, and which overstates actual peptide mass by however much
+fraction of the vial's total powder mass is peptide at all (as opposed to water or counterion
+salt left from synthesis). When a COA states both, this tool multiplies them together. When only
+purity is stated - the common case - it uses purity alone. That is the simplification most
+vendor-published numbers imply, and it overstates actual peptide mass by however much
 salt/water is actually in the vial. That gap is exactly why an unstated net content matters.
 
 Values outside the physically possible 0-100% range are computed through rather than rejected;
 CC-PURITY and CC-NET (below) are what flag them.
 
 `labeled_mg` is whatever mass the document states, converted to mg. The parser accepts `mg`,
-`mcg`/`ug`/`µg` and `g`; a unit it doesn't recognize leaves the field missing rather than
-guessing, because a mass wrong by a factor of a thousand is worse than no mass at all.
+`mcg`/`ug`/`µg` and `g`. A unit it doesn't recognize leaves the field missing rather than
+guessing. A mass wrong by a factor of a thousand is worse than no mass at all. A molar mass
+(`1419.53 g/mol` or `g mol-1`) is never read as the vial mass.
 
 A purity figure can carry a leading bound, written as a symbol (`>=`, `<`, `≥`) or as words
 (`NLT`, `NMT`, `min.`, `max.`, `not less than`, `greater than`). Word forms are normalized to
-the symbol they mean, so `NLT 98.0%` and `>=98.0%` reach CC-PURITY as the same thing. When a
-row carries both a bound and a plain value, as in a Specification column next to a Result
-column (`Purity (HPLC)   NLT 98.0%   95.1%`), the plain value is the measured one and wins.
+the symbol they mean, so `NLT 98.0%` and `>=98.0%` reach CC-PURITY as the same thing. A row
+can carry both a bound and a plain value, as in a Specification column next to a Result column
+(`Purity (HPLC)   NLT 98.0%   95.1%`). The plain value is the measured one and wins. A Method
+column between the label and the percentages is skipped over. The percentages stop at the next
+column that isn't one. A second test further along the same row keeps its own value.
 
 ## Reconstitution math
 
@@ -49,9 +52,9 @@ The 100-units-per-mL ratio is a fixed property of a U-100 insulin syringe, not a
 This tool does not suggest a dose - `--dose` is whatever number you give it.
 
 `vial_mg` depends on where the math was run from. The `recon` subcommand uses `--vial`
-verbatim. `parse --recon-water/--dose` defaults to `actual_mg` from the purity block above,
-since a doses-per-vial figure off `labeled_mg` contradicts the shortfall the same report just
-printed; `--recon-basis labeled` switches back. The extension's calculator works the same way
+verbatim. `parse --recon-water/--dose` defaults to `actual_mg` from the purity block above.
+A doses-per-vial figure off `labeled_mg` would contradict the shortfall the same report just
+printed. `--recon-basis labeled` switches back. The extension's calculator works the same way
 and shows which basis it used.
 
 ## Red-flag checks
@@ -61,9 +64,9 @@ and shows which basis it used.
 Whether a usable HPLC purity figure is present. FAIL if no purity percentage is found anywhere,
 or if the stated value is outside the physically possible 0-100% range. WARN if the purity is
 stated only as an upper bound (`<98%` or `NMT 98%`). The real figure could be anything under
-that, so it can't be checked against the line below, and the purity math is skipped with the
+that. It can't be checked against the line below, and the purity math is skipped with the
 reason in its place. `parse --recon-water` then refuses the actual-mass basis unless you pass
-`--recon-basis labeled`, and the extension's calculator falls back to the labeled mass with a
+`--recon-basis labeled`. The extension's calculator falls back to the labeled mass with a
 note. WARN if purity is present but below `RESEARCH_GRADE_PURITY_THRESHOLD` (98%,
 `coacheck/redflags.py`) - a labeling convention some vendors use for "research grade" material,
 not a clinical or safety threshold. PASS at or above that line.
@@ -105,7 +108,7 @@ double up on the same missing field.
 Only fires on the net peptide content figure, and only when one is present (it's an optional
 field on most COAs; absence is not itself a flag). FAIL if the stated value is outside the
 physically possible 0-100% range. WARN if the value is stated only as an upper bound (`<70%` or
-`NMT 70%`). The real figure could be anything under that, so the purity math is skipped and the
+`NMT 70%`). The real figure could be anything under that. The purity math is skipped and the
 report says why. PASS otherwise, including when the field is absent.
 
 ## What a clean checklist means

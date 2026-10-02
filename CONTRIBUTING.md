@@ -1,6 +1,7 @@
 # Contributing
 
 Thanks for looking at this. It's a small, single-purpose tool and contributions are welcome.
+Issues and pull requests go to https://github.com/munzzyy/coacheck.
 
 ## Setup
 
@@ -18,8 +19,9 @@ python -m unittest discover -s tests -t .
 ```
 
 That's the Python suite: parser tests, math tests (hand-verified expected numbers), red-flag
-checklist tests, and CLI tests, plus a set of synthetic COA fixtures in `tests/fixtures/`. CI
-runs the same command across Linux, macOS, and Windows on Python 3.9 through 3.14.
+checklist tests and CLI tests. They run over a set of synthetic COA fixtures in
+`tests/fixtures/`. CI runs the same command across Linux, macOS and Windows on Python 3.9
+through 3.14.
 
 The browser extension runs a JS port of the same engine, so anything under `coacheck/` that
 changes parsing or math has a twin under `extension/engine/`. Its tests need Node and nothing
@@ -43,7 +45,7 @@ a field goes unparsed because of wording this tool doesn't recognize yet:
 2. Add a test for it to `tests/test_parser.py` and to `tests/js/engine.test.mjs`.
 3. Add a case to `tests/web_parity/cases.json`, either the line itself or a new synthetic
    fixture under `tests/fixtures/`. `gen_fixtures.py` stops with an error when a fixture has no
-   case, so a fixture always needs one.
+   case.
 4. Run the Python suite, `node --test tests/js/*.test.mjs` and
    `python3 tests/web_parity/gen_fixtures.py && node tests/web_parity/check.mjs`.
 
@@ -54,7 +56,7 @@ synthetic: no real vendor COAs, lab names or batch numbers.
 
 Every check in `coacheck/redflags.py` returns exactly one `Flag` with a stable id (`CC-...`).
 New checks need a test for each of their pass/warn/fail branches - see `tests/test_redflags.py`
-for the shape. The same check goes into `extension/engine/redflags.js`, with parity cases for
+for the shape. The same check goes into `extension/engine/redflags.js` with parity cases for
 each branch.
 
 ## Zero dependencies

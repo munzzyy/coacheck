@@ -164,9 +164,9 @@ engine is pinned to match the Python package exactly.
   separators, case-insensitive). It also reads two-column table rows with nothing but
   whitespace between label and value, which is what `pdftotext -layout` and the extension's OCR
   produce. On a table with a Specification column next to a Result column it reads the
-  measured result, not the spec bound. Purity bounds written as words ("NLT 98.0%", "min.
-  98.0%") count the same as `>=`, and a mass in mcg, ug or g is normalized to mg. See [docs/checks.md](docs/checks.md) for the
-  exact formulas.
+  measured result, not the spec bound. Purity bounds written as words ("NLT 98.0%",
+  "min. 98.0%") count the same as `>=`, and a mass in mcg, ug or g is normalized to mg. See
+  [docs/checks.md](docs/checks.md) for the exact formulas.
 - Computes actual deliverable peptide mass from labeled mass, purity, and (if stated) net
   peptide content, plus the shortfall against the label in both mg and percent.
 - Runs an 8-item red-flag checklist (`CC-PURITY`, `CC-MASS`, `CC-BATCH`, `CC-LAB`, `CC-METHOD`,
@@ -223,7 +223,8 @@ What is left needs a decision, an account or a person this repo can't stand in f
   Orca yet.
 - OCR on real COA screenshots. The extension's OCR is tested on clean synthetic text, and the
   public fixtures have to stay synthetic. Real vendor images have compression artifacts and
-  odd layouts, so this needs people to try it on their own documents and report what misreads.
+  odd layouts, so this needs people to try it on their own documents. If you do, please open
+  an issue with the line it misread, retyped with made-up values.
 
 ## Contributing
 
