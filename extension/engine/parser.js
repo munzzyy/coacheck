@@ -136,14 +136,14 @@ const PRODUCT_PATTERNS = [
   new RegExp(`^item\\s*name\\s*${SEP}(.+)$`, "i"),
 ];
 
-// The trailing whitespace is pulled inside the optional group ("(?:\(...\)\s*)?" rather than
-// "(?:\(...\))?\s*") so there are never two free-floating \s* runs on either side of an
-// empty-matchable group - that adjacency is what makes the scan quadratic on a long run of
-// whitespace.
 // A method written after the label ("Purity by HPLC", "Purity, RP-HPLC"). A fixed list rather
 // than any word, so both engines agree on case folding.
 const PURITY_METHOD = "(?:rp-?)?(?:u?hplc|uplc|lc)(?:-?(?:ms|uv))?";
 
+// The trailing whitespace is pulled inside the optional group ("(?:\(...\)\s*)?" rather than
+// "(?:\(...\))?\s*") so there are never two free-floating \s* runs on either side of an
+// empty-matchable group - that adjacency is what makes the scan quadratic on a long run of
+// whitespace.
 const PURITY_PATTERNS = [
   new RegExp(
     "^(?:peptide\\s+)?(?:hplc\\s+)?purity\\s*"
@@ -158,6 +158,8 @@ const NET_CONTENT_PATTERNS = [
   new RegExp(`^net\\s*content\\s*(?:\\([^)]*\\)\\s*)?${SEP}${PCT_VALUE}`, "i"),
   new RegExp(`^peptide\\s*content\\s*(?:\\([^)]*\\)\\s*)?${SEP}${PCT_VALUE}`, "i"),
 ];
+
+const PCT_FIELD_PATTERNS = [...PURITY_PATTERNS, ...NET_CONTENT_PATTERNS];
 
 const MASS_PATTERNS = [
   new RegExp(`^net\\s*weight\\s*${SEP}${DECIMAL_VALUE}${MASS_UNIT}`, "i"),
@@ -258,16 +260,21 @@ function tiers(segs) {
   return [segs, joined];
 }
 
-// candidates(), plus each label column glued to every percentage column further along the
-// row, so a specs table's result is reachable however far from the label it sits.
+// candidates(), plus each label column glued to the run of percentage columns one column past
+// it ("Purity  HPLC  NLT 98.0%  95.1%"). The run stops at the first other column, and the
+// column in between can't be a percentage label itself, so another test on the same row keeps
+// its own value.
 function pctCandidates(line) {
   const segs = segments(line);
   const [direct, joined] = tiers(segs);
   const cells = segs.map((s) => PCT_CELL.test(s));
-  for (let i = 0; i < segs.length; i++) {
+  for (let i = 0; i < segs.length - 2; i++) {
     if (cells[i]) continue;
+    const between = `${segs[i + 1]}: ${segs[i + 2]}`;
+    if (!cells[i + 1] && PCT_FIELD_PATTERNS.some((p) => p.test(between))) continue;
     for (let j = i + 2; j < segs.length; j++) {
-      if (cells[j]) joined.push(`${segs[i]}: ${segs[j]}`);
+      if (!cells[j]) break;
+      joined.push(`${segs[i]}: ${segs[j]}`);
     }
   }
   return [direct, joined];

@@ -102,6 +102,37 @@ test("parseCoa: a bare number far along a row is not glued to the label", () => 
   assert.equal(parseCoa("Purity  was  checked  on  5  vials\n").purity_pct, null);
 });
 
+test("parseCoa: a method column then the result reads the result", () => {
+  const coa = parseCoa("Purity    HPLC    99.1%\nQuantity: 5 mg\n");
+  assert.equal(coa.purity_pct, 99.1);
+  assert.equal(coa.purity_qualifier, null);
+});
+
+test("parseCoa: another test further along the row keeps its value", () => {
+  let coa = parseCoa("Net Peptide Content  NLT 80%   Purity   99.1%\nQuantity: 5 mg\n");
+  assert.equal(coa.net_content_pct, 80);
+  assert.equal(coa.net_content_qualifier, ">=");
+  assert.equal(coa.purity_pct, 99.1);
+
+  coa = parseCoa("Purity (HPLC)  NLT 98.0%  Impurity  1.2%\nQuantity: 5 mg\n");
+  assert.equal(coa.purity_pct, 98);
+  assert.equal(coa.purity_qualifier, ">=");
+
+  coa = parseCoa("Purity  HPLC  Net Peptide Content  80%\nQuantity: 5 mg\n");
+  assert.equal(coa.purity_pct, null);
+  assert.equal(coa.net_content_pct, 80);
+});
+
+test("parseCoa: an empty cell before another label is not a method", () => {
+  let coa = parseCoa("Net Peptide Content    Purity    99.1%\nQuantity: 5 mg\n");
+  assert.equal(coa.net_content_pct, null);
+  assert.equal(coa.purity_pct, 99.1);
+
+  coa = parseCoa("Purity    Net Peptide Content    NLT 80%    85.0%\n");
+  assert.equal(coa.purity_pct, null);
+  assert.equal(coa.net_content_pct, 85);
+});
+
 test("parseCoa: a peptide content in mg is not read as a percentage", () => {
   const coa = parseCoa("Purity: 99.1%\nPeptide Content: 5mg\nQuantity: 5 mg\n");
   assert.equal(coa.net_content_pct, null);

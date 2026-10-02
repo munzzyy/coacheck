@@ -138,14 +138,14 @@ _PRODUCT_PATTERNS = [
     re.compile(r"^item\s*name\s*" + _SEP + r"(.+)$", re.IGNORECASE),
 ]
 
-# The trailing whitespace is pulled inside the optional group (e.g.
-# "(?:\([^)]*\)\s*)?" rather than "(?:\([^)]*\))?\s*") so there are never two
-# free-floating \s* runs on either side of an empty-matchable group - that
-# adjacency is what makes the scan quadratic on a long run of whitespace.
 # A method written after the label ("Purity by HPLC", "Purity, RP-HPLC"). A
 # fixed list rather than any word, so both engines agree on case folding.
 _PURITY_METHOD = r"(?:rp-?)?(?:u?hplc|uplc|lc)(?:-?(?:ms|uv))?"
 
+# The trailing whitespace is pulled inside the optional group (e.g.
+# "(?:\([^)]*\)\s*)?" rather than "(?:\([^)]*\))?\s*") so there are never two
+# free-floating \s* runs on either side of an empty-matchable group - that
+# adjacency is what makes the scan quadratic on a long run of whitespace.
 _PURITY_PATTERNS = [
     re.compile(
         r"^(?:peptide\s+)?(?:hplc\s+)?purity\s*"
@@ -162,6 +162,8 @@ _NET_CONTENT_PATTERNS = [
     re.compile(r"^net\s*content\s*(?:\([^)]*\)\s*)?" + _SEP + _PCT_VALUE, re.IGNORECASE),
     re.compile(r"^peptide\s*content\s*(?:\([^)]*\)\s*)?" + _SEP + _PCT_VALUE, re.IGNORECASE),
 ]
+
+_PCT_FIELD_PATTERNS = _PURITY_PATTERNS + _NET_CONTENT_PATTERNS
 
 _MASS_PATTERNS = [
     re.compile(r"^net\s*weight\s*" + _SEP + _DECIMAL_VALUE + _MASS_UNIT, re.IGNORECASE),
@@ -295,18 +297,23 @@ def _tiers(segments: list[str]) -> tuple[list[str], list[str]]:
 
 
 def _pct_candidates(line: str) -> tuple[list[str], list[str]]:
-    """_candidates, plus each label column glued to every percentage column
-    further along the row, so a specs table's result is reachable however far
-    from the label it sits ("Purity  HPLC  NLT 98.0%  95.1%")."""
+    """_candidates, plus each label column glued to the run of percentage
+    columns one column past it ("Purity  HPLC  NLT 98.0%  95.1%"). The run stops
+    at the first other column, and the column in between can't be a percentage
+    label itself, so another test on the same row keeps its own value."""
     segments = _segments(line)
     direct, joined = _tiers(segments)
     cells = [bool(_PCT_CELL.match(s)) for s in segments]
-    for i, label in enumerate(segments):
+    for i in range(len(segments) - 2):
         if cells[i]:
             continue
-        joined.extend(
-            f"{label}: {segments[j]}" for j in range(i + 2, len(segments)) if cells[j]
-        )
+        between = f"{segments[i + 1]}: {segments[i + 2]}"
+        if not cells[i + 1] and any(p.match(between) for p in _PCT_FIELD_PATTERNS):
+            continue
+        for j in range(i + 2, len(segments)):
+            if not cells[j]:
+                break
+            joined.append(f"{segments[i]}: {segments[j]}")
     return direct, joined
 
 

@@ -325,6 +325,34 @@ class SpecBeforeResult(unittest.TestCase):
     def test_a_bare_number_far_along_a_row_is_not_glued(self):
         self.assertIsNone(parse_coa("Purity  was  checked  on  5  vials\n").purity_pct)
 
+    def test_method_column_then_result(self):
+        coa = parse_coa("Purity    HPLC    99.1%\nQuantity: 5 mg\n")
+        self.assertEqual(coa.purity_pct, 99.1)
+        self.assertIsNone(coa.purity_qualifier)
+
+    def test_another_test_further_along_the_row_keeps_its_value(self):
+        coa = parse_coa("Net Peptide Content  NLT 80%   Purity   99.1%\nQuantity: 5 mg\n")
+        self.assertEqual(coa.net_content_pct, 80.0)
+        self.assertEqual(coa.net_content_qualifier, ">=")
+        self.assertEqual(coa.purity_pct, 99.1)
+
+        coa = parse_coa("Purity (HPLC)  NLT 98.0%  Impurity  1.2%\nQuantity: 5 mg\n")
+        self.assertEqual(coa.purity_pct, 98.0)
+        self.assertEqual(coa.purity_qualifier, ">=")
+
+        coa = parse_coa("Purity  HPLC  Net Peptide Content  80%\nQuantity: 5 mg\n")
+        self.assertIsNone(coa.purity_pct)
+        self.assertEqual(coa.net_content_pct, 80.0)
+
+    def test_an_empty_cell_before_another_label_is_not_a_method(self):
+        coa = parse_coa("Net Peptide Content    Purity    99.1%\nQuantity: 5 mg\n")
+        self.assertIsNone(coa.net_content_pct)
+        self.assertEqual(coa.purity_pct, 99.1)
+
+        coa = parse_coa("Purity    Net Peptide Content    NLT 80%    85.0%\n")
+        self.assertIsNone(coa.purity_pct)
+        self.assertEqual(coa.net_content_pct, 85.0)
+
     def test_spec_before_result_fixture(self):
         coa = parse_coa(fixture_text("coa_spec_before_result.txt"))
         self.assertEqual(coa.purity_pct, 95.1)

@@ -84,6 +84,19 @@
     "text": "Test      Method    Specification   Result\nPurity    HPLC      NLT 98.0%       95.1%\nQuantity: 5 mg\n"
   },
   { "name": "parse_spec_only_row_keeps_the_bound", "type": "parse", "text": "Purity (HPLC)  NLT 98.0%\nQuantity: 5 mg\n" },
+  { "name": "parse_method_column_then_result", "type": "parse", "text": "Purity    HPLC    99.1%\nQuantity: 5 mg\n" },
+  {
+    "name": "parse_second_test_on_a_spec_row_keeps_its_value",
+    "type": "parse",
+    "text": "Net Peptide Content  NLT 80%   Purity   99.1%\nQuantity: 5 mg\n"
+  },
+  {
+    "name": "parse_impurity_after_purity_spec_is_not_the_purity",
+    "type": "parse",
+    "text": "Purity (HPLC)  NLT 98.0%  Impurity  1.2%\nQuantity: 5 mg\n"
+  },
+  { "name": "parse_label_without_a_value_before_another_test", "type": "parse", "text": "Purity  HPLC  Net Peptide Content  80%\nQuantity: 5 mg\n" },
+  { "name": "parse_empty_cell_before_another_label", "type": "parse", "text": "Net Peptide Content    Purity    99.1%\nQuantity: 5 mg\n" },
   { "name": "parse_peptide_content_in_mg_is_not_a_percentage", "type": "parse", "text": "Purity: 99.1%\nPeptide Content: 5mg\nQuantity: 5 mg\n" },
   { "name": "parse_net_content_in_mg_is_the_vial_mass", "type": "parse", "text": "Purity: 99.1%\nNet Content: 10 mg\n" },
   { "name": "parse_weight_in_g_per_mol_is_not_the_vial_mass", "type": "parse", "text": "Weight: 1419.53 g/mol\nPurity: 99.1%\nQuantity: 5 mg\n" },
