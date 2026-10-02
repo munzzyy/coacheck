@@ -1,0 +1,7 @@
+Certificate of Analysis
+Product: Example peptide
+Quantity: 5 mg
+Purity  HPLC  NLT 98.0%  95.1%
+Net Peptide Content    Water Content    5.2%
+Net Peptide Content  AAA  82.3%
+Purity (HPLC)    Impurities    0.8%

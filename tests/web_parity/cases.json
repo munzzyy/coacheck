@@ -1,27 +1,114 @@
 [
-  { "name": "fixture_coa_clean", "type": "parse", "fixture": "coa_clean.txt" },
-  { "name": "fixture_coa_implausible_net", "type": "parse", "fixture": "coa_implausible_net.txt" },
-  { "name": "fixture_coa_low_purity", "type": "parse", "fixture": "coa_low_purity.txt" },
-  { "name": "fixture_coa_messy_labels", "type": "parse", "fixture": "coa_messy_labels.txt" },
-  { "name": "fixture_coa_minimal", "type": "parse", "fixture": "coa_minimal.txt" },
-  { "name": "fixture_coa_missing_batch", "type": "parse", "fixture": "coa_missing_batch.txt" },
-  { "name": "fixture_coa_missing_mass", "type": "parse", "fixture": "coa_missing_mass.txt" },
-  { "name": "fixture_coa_purity_upper_bound", "type": "parse", "fixture": "coa_purity_upper_bound.txt" },
-  { "name": "fixture_coa_missing_lab", "type": "parse", "fixture": "coa_missing_lab.txt" },
-  { "name": "fixture_coa_no_method", "type": "parse", "fixture": "coa_no_method.txt" },
-  { "name": "fixture_coa_bom", "type": "parse", "fixture": "coa_bom.txt" },
-  { "name": "fixture_coa_table_layout", "type": "parse", "fixture": "coa_table_layout.txt" },
-  { "name": "fixture_coa_spec_before_result", "type": "parse", "fixture": "coa_spec_before_result.txt" },
-
-  { "name": "parse_empty_text", "type": "parse", "text": "" },
-  { "name": "parse_whitespace_only", "type": "parse", "text": "   \n\n\t  \n" },
-  { "name": "parse_first_match_wins_on_duplicate_labels", "type": "parse", "text": "Purity: 91%\nPurity: 99%\n" },
-  { "name": "parse_extra_whitespace_around_separator", "type": "parse", "text": "Purity   :    98.5 %\n" },
-  { "name": "parse_unicode_qualifier", "type": "parse", "text": "Purity: ≥99%\n" },
-  { "name": "parse_inequality_qualifier", "type": "parse", "text": "Purity: >=98%\n" },
-  { "name": "parse_purity_percent_label_no_value_percent", "type": "parse", "text": "Purity (%): 97.1\n" },
-  { "name": "parse_comma_decimal_purity", "type": "parse", "text": "Purity: 98,99%\n" },
-  { "name": "parse_comma_decimal_mass", "type": "parse", "text": "Net Weight: 5,5mg\n" },
+  {
+    "name": "fixture_coa_clean",
+    "type": "parse",
+    "fixture": "coa_clean.txt"
+  },
+  {
+    "name": "fixture_coa_implausible_net",
+    "type": "parse",
+    "fixture": "coa_implausible_net.txt"
+  },
+  {
+    "name": "fixture_coa_low_purity",
+    "type": "parse",
+    "fixture": "coa_low_purity.txt"
+  },
+  {
+    "name": "fixture_coa_messy_labels",
+    "type": "parse",
+    "fixture": "coa_messy_labels.txt"
+  },
+  {
+    "name": "fixture_coa_minimal",
+    "type": "parse",
+    "fixture": "coa_minimal.txt"
+  },
+  {
+    "name": "fixture_coa_missing_batch",
+    "type": "parse",
+    "fixture": "coa_missing_batch.txt"
+  },
+  {
+    "name": "fixture_coa_missing_mass",
+    "type": "parse",
+    "fixture": "coa_missing_mass.txt"
+  },
+  {
+    "name": "fixture_coa_purity_upper_bound",
+    "type": "parse",
+    "fixture": "coa_purity_upper_bound.txt"
+  },
+  {
+    "name": "fixture_coa_missing_lab",
+    "type": "parse",
+    "fixture": "coa_missing_lab.txt"
+  },
+  {
+    "name": "fixture_coa_no_method",
+    "type": "parse",
+    "fixture": "coa_no_method.txt"
+  },
+  {
+    "name": "fixture_coa_bom",
+    "type": "parse",
+    "fixture": "coa_bom.txt"
+  },
+  {
+    "name": "fixture_coa_table_layout",
+    "type": "parse",
+    "fixture": "coa_table_layout.txt"
+  },
+  {
+    "name": "fixture_coa_spec_before_result",
+    "type": "parse",
+    "fixture": "coa_spec_before_result.txt"
+  },
+  {
+    "name": "parse_empty_text",
+    "type": "parse",
+    "text": ""
+  },
+  {
+    "name": "parse_whitespace_only",
+    "type": "parse",
+    "text": "   \n\n\t  \n"
+  },
+  {
+    "name": "parse_first_match_wins_on_duplicate_labels",
+    "type": "parse",
+    "text": "Purity: 91%\nPurity: 99%\n"
+  },
+  {
+    "name": "parse_extra_whitespace_around_separator",
+    "type": "parse",
+    "text": "Purity   :    98.5 %\n"
+  },
+  {
+    "name": "parse_unicode_qualifier",
+    "type": "parse",
+    "text": "Purity: \u226599%\n"
+  },
+  {
+    "name": "parse_inequality_qualifier",
+    "type": "parse",
+    "text": "Purity: >=98%\n"
+  },
+  {
+    "name": "parse_purity_percent_label_no_value_percent",
+    "type": "parse",
+    "text": "Purity (%): 97.1\n"
+  },
+  {
+    "name": "parse_comma_decimal_purity",
+    "type": "parse",
+    "text": "Purity: 98,99%\n"
+  },
+  {
+    "name": "parse_comma_decimal_mass",
+    "type": "parse",
+    "text": "Net Weight: 5,5mg\n"
+  },
   {
     "name": "parse_mixed_dot_and_comma_decimals",
     "type": "parse",
@@ -37,31 +124,111 @@
     "type": "parse",
     "text": "Note: no analytical method is disclosed here.\n"
   },
-  { "name": "parse_lot_number_variant", "type": "parse", "text": "Lot Number: L-99\n" },
-  { "name": "parse_batch_no_variant", "type": "parse", "text": "Batch No: B-12\n" },
-  { "name": "parse_thousands_separator_mass", "type": "parse", "text": "Quantity: 1,000 mg\n" },
-  { "name": "parse_thousands_separator_5000_mass", "type": "parse", "text": "Net Weight: 5,000 mg\n" },
-  { "name": "parse_upper_bound_purity_qualifier", "type": "parse", "text": "Purity: <98.5%\nNet Weight: 5 mg\nTest Method: RP-HPLC\n" },
-  { "name": "parse_less_equal_purity_qualifier", "type": "parse", "text": "Purity: <=97%\n" },
-  { "name": "parse_utf8_bom_prefix", "type": "parse", "text": "\uFEFFPurity: 99.5%\nNet Weight: 5 mg\nTest Method: RP-HPLC\n" },
-  { "name": "parse_vertical_tab_separator", "type": "parse", "text": "Product Name: RC-118\u000bPurity: 92%\u000bNet Weight: 5 mg\u000bTest Method: RP-HPLC\u000b" },
-  { "name": "parse_nel_separator", "type": "parse", "text": "Product Name: RC-118\u0085Purity: 92%\u0085Net Weight: 5 mg\u0085Test Method: RP-HPLC\u0085" },
-  { "name": "parse_line_separator_u2028", "type": "parse", "text": "Product Name: RC-118\u2028Purity: 92%\u2028Net Weight: 5 mg\u2028Test Method: RP-HPLC\u2028" },
-  { "name": "parse_fullwidth_digits_not_parsed", "type": "parse", "text": "Purity: ９２．０%\n" },
-  { "name": "parse_hyphen_inside_lot_label", "type": "parse", "text": "Lot-Nr: RC118-A\n" },
-  { "name": "parse_hyphen_inside_batch_label", "type": "parse", "text": "Batch-No: RC118-A\n" },
-  { "name": "parse_hyphen_inside_lab_label_is_not_a_separator", "type": "parse", "text": "Lab-tested: yes\n" },
-  { "name": "parse_spaced_dash_separator_still_works", "type": "parse", "text": "Lot No - SP200/2026-11\nPurity (HPLC) - 98.9%\n" },
-  { "name": "parse_equals_separator", "type": "parse", "text": "Purity = 99.1%\n" },
-  { "name": "parse_en_dash_separator", "type": "parse", "text": "Purity \u2013 99.1%\n" },
-  { "name": "parse_em_dash_separator", "type": "parse", "text": "Purity \u2014 99.1%\n" },
+  {
+    "name": "parse_lot_number_variant",
+    "type": "parse",
+    "text": "Lot Number: L-99\n"
+  },
+  {
+    "name": "parse_batch_no_variant",
+    "type": "parse",
+    "text": "Batch No: B-12\n"
+  },
+  {
+    "name": "parse_thousands_separator_mass",
+    "type": "parse",
+    "text": "Quantity: 1,000 mg\n"
+  },
+  {
+    "name": "parse_thousands_separator_5000_mass",
+    "type": "parse",
+    "text": "Net Weight: 5,000 mg\n"
+  },
+  {
+    "name": "parse_upper_bound_purity_qualifier",
+    "type": "parse",
+    "text": "Purity: <98.5%\nNet Weight: 5 mg\nTest Method: RP-HPLC\n"
+  },
+  {
+    "name": "parse_less_equal_purity_qualifier",
+    "type": "parse",
+    "text": "Purity: <=97%\n"
+  },
+  {
+    "name": "parse_utf8_bom_prefix",
+    "type": "parse",
+    "text": "\ufeffPurity: 99.5%\nNet Weight: 5 mg\nTest Method: RP-HPLC\n"
+  },
+  {
+    "name": "parse_vertical_tab_separator",
+    "type": "parse",
+    "text": "Product Name: RC-118\u000bPurity: 92%\u000bNet Weight: 5 mg\u000bTest Method: RP-HPLC\u000b"
+  },
+  {
+    "name": "parse_nel_separator",
+    "type": "parse",
+    "text": "Product Name: RC-118\u0085Purity: 92%\u0085Net Weight: 5 mg\u0085Test Method: RP-HPLC\u0085"
+  },
+  {
+    "name": "parse_line_separator_u2028",
+    "type": "parse",
+    "text": "Product Name: RC-118\u2028Purity: 92%\u2028Net Weight: 5 mg\u2028Test Method: RP-HPLC\u2028"
+  },
+  {
+    "name": "parse_fullwidth_digits_not_parsed",
+    "type": "parse",
+    "text": "Purity: \uff19\uff12\uff0e\uff10%\n"
+  },
+  {
+    "name": "parse_hyphen_inside_lot_label",
+    "type": "parse",
+    "text": "Lot-Nr: RC118-A\n"
+  },
+  {
+    "name": "parse_hyphen_inside_batch_label",
+    "type": "parse",
+    "text": "Batch-No: RC118-A\n"
+  },
+  {
+    "name": "parse_hyphen_inside_lab_label_is_not_a_separator",
+    "type": "parse",
+    "text": "Lab-tested: yes\n"
+  },
+  {
+    "name": "parse_spaced_dash_separator_still_works",
+    "type": "parse",
+    "text": "Lot No - SP200/2026-11\nPurity (HPLC) - 98.9%\n"
+  },
+  {
+    "name": "parse_equals_separator",
+    "type": "parse",
+    "text": "Purity = 99.1%\n"
+  },
+  {
+    "name": "parse_en_dash_separator",
+    "type": "parse",
+    "text": "Purity \u2013 99.1%\n"
+  },
+  {
+    "name": "parse_em_dash_separator",
+    "type": "parse",
+    "text": "Purity \u2014 99.1%\n"
+  },
   {
     "name": "parse_whitespace_column_table",
     "type": "parse",
     "text": "Purity (HPLC)      99.1 %\nBatch/Lot          RC118-A\nTest Method        RP-HPLC\nNet Weight         5 mg\n"
   },
-  { "name": "parse_tab_column_table", "type": "parse", "text": "Purity (HPLC)\t99.1 %\nNet Weight\t5 mg\n" },
-  { "name": "parse_prose_with_double_space_not_a_field", "type": "parse", "text": "Purity  is  important\n" },
+  {
+    "name": "parse_tab_column_table",
+    "type": "parse",
+    "text": "Purity (HPLC)\t99.1 %\nNet Weight\t5 mg\n"
+  },
+  {
+    "name": "parse_prose_with_double_space_not_a_field",
+    "type": "parse",
+    "text": "Purity  is  important\n"
+  },
   {
     "name": "parse_table_header_row_is_not_data",
     "type": "parse",
@@ -77,14 +244,26 @@
     "type": "parse",
     "text": "Test           Specification     Result\nPurity (HPLC)  NLT 98.0%         95.1%\nNet Weight     5 mg              5 mg\n"
   },
-  { "name": "parse_symbol_spec_before_result", "type": "parse", "text": "Purity (HPLC)   >=98%    96.4%\nQuantity: 5 mg\n" },
+  {
+    "name": "parse_symbol_spec_before_result",
+    "type": "parse",
+    "text": "Purity (HPLC)   >=98%    96.4%\nQuantity: 5 mg\n"
+  },
   {
     "name": "parse_method_column_between_label_and_spec",
     "type": "parse",
     "text": "Test      Method    Specification   Result\nPurity    HPLC      NLT 98.0%       95.1%\nQuantity: 5 mg\n"
   },
-  { "name": "parse_spec_only_row_keeps_the_bound", "type": "parse", "text": "Purity (HPLC)  NLT 98.0%\nQuantity: 5 mg\n" },
-  { "name": "parse_method_column_then_result", "type": "parse", "text": "Purity    HPLC    99.1%\nQuantity: 5 mg\n" },
+  {
+    "name": "parse_spec_only_row_keeps_the_bound",
+    "type": "parse",
+    "text": "Purity (HPLC)  NLT 98.0%\nQuantity: 5 mg\n"
+  },
+  {
+    "name": "parse_method_column_then_result",
+    "type": "parse",
+    "text": "Purity    HPLC    99.1%\nQuantity: 5 mg\n"
+  },
   {
     "name": "parse_second_test_on_a_spec_row_keeps_its_value",
     "type": "parse",
@@ -95,46 +274,166 @@
     "type": "parse",
     "text": "Purity (HPLC)  NLT 98.0%  Impurity  1.2%\nQuantity: 5 mg\n"
   },
-  { "name": "parse_label_without_a_value_before_another_test", "type": "parse", "text": "Purity  HPLC  Net Peptide Content  80%\nQuantity: 5 mg\n" },
-  { "name": "parse_empty_cell_before_another_label", "type": "parse", "text": "Net Peptide Content    Purity    99.1%\nQuantity: 5 mg\n" },
-  { "name": "parse_peptide_content_in_mg_is_not_a_percentage", "type": "parse", "text": "Purity: 99.1%\nPeptide Content: 5mg\nQuantity: 5 mg\n" },
-  { "name": "parse_net_content_in_mg_is_the_vial_mass", "type": "parse", "text": "Purity: 99.1%\nNet Content: 10 mg\n" },
-  { "name": "parse_weight_in_g_per_mol_is_not_the_vial_mass", "type": "parse", "text": "Weight: 1419.53 g/mol\nPurity: 99.1%\nQuantity: 5 mg\n" },
-  { "name": "parse_mass_in_g_per_mol_is_not_the_vial_mass", "type": "parse", "text": "Mass: 1419.5 g/mol\nPurity: 99.1%\nNet Weight: 5 mg\n" },
-  { "name": "parse_molar_mass_with_an_exponent", "type": "parse", "text": "Weight: 1419.53 g mol-1\nQuantity: 5 mg\n" },
-  { "name": "parse_molar_mass_with_middle_dot_and_superscript", "type": "parse", "text": "Weight: 1419.53 g\u00b7mol\u207b\u00b9\nQuantity: 5 mg\n" },
+  {
+    "name": "parse_label_without_a_value_before_another_test",
+    "type": "parse",
+    "text": "Purity  HPLC  Net Peptide Content  80%\nQuantity: 5 mg\n"
+  },
+  {
+    "name": "parse_empty_cell_before_another_label",
+    "type": "parse",
+    "text": "Net Peptide Content    Purity    99.1%\nQuantity: 5 mg\n"
+  },
+  {
+    "name": "parse_peptide_content_in_mg_is_not_a_percentage",
+    "type": "parse",
+    "text": "Purity: 99.1%\nPeptide Content: 5mg\nQuantity: 5 mg\n"
+  },
+  {
+    "name": "parse_net_content_in_mg_is_the_vial_mass",
+    "type": "parse",
+    "text": "Purity: 99.1%\nNet Content: 10 mg\n"
+  },
+  {
+    "name": "parse_weight_in_g_per_mol_is_not_the_vial_mass",
+    "type": "parse",
+    "text": "Weight: 1419.53 g/mol\nPurity: 99.1%\nQuantity: 5 mg\n"
+  },
+  {
+    "name": "parse_mass_in_g_per_mol_is_not_the_vial_mass",
+    "type": "parse",
+    "text": "Mass: 1419.5 g/mol\nPurity: 99.1%\nNet Weight: 5 mg\n"
+  },
+  {
+    "name": "parse_molar_mass_with_an_exponent",
+    "type": "parse",
+    "text": "Weight: 1419.53 g mol-1\nQuantity: 5 mg\n"
+  },
+  {
+    "name": "parse_molar_mass_with_middle_dot_and_superscript",
+    "type": "parse",
+    "text": "Weight: 1419.53 g\u00b7mol\u207b\u00b9\nQuantity: 5 mg\n"
+  },
   {
     "name": "parse_mass_then_molecular_weight_on_one_line",
     "type": "parse",
     "text": "Net Weight: 5 mg Molecular Weight: 1419.53 g/mol\nPurity: 99.1%\nMethod: HPLC\n"
   },
-  { "name": "parse_mass_then_mol_wt_on_one_line", "type": "parse", "text": "Net Weight: 5 mg Mol. Wt: 1419.5\n" },
-  { "name": "parse_mass_then_molecular_formula_on_one_line", "type": "parse", "text": "Net Weight: 2 mg Molecular formula C62H98N16O22\n" },
-  { "name": "parse_net_peptide_content_without_percent_sign", "type": "parse", "text": "Net Peptide Content: 82.3\n" },
-  { "name": "parse_wording_peptide_purity_hplc", "type": "parse", "text": "Peptide Purity (HPLC): 99.3%\n" },
-  { "name": "parse_wording_purity_by_method", "type": "parse", "text": "Purity by HPLC: 99.3%\n" },
-  { "name": "parse_wording_purity_square_brackets", "type": "parse", "text": "Purity [HPLC]: 99.3%\n" },
-  { "name": "parse_wording_purity_comma_method", "type": "parse", "text": "Purity, HPLC: 99.3%\n" },
-  { "name": "parse_wording_purity_dot_leader", "type": "parse", "text": "Purity (HPLC) ...... 99.3%\n" },
-  { "name": "parse_wording_batch_hash", "type": "parse", "text": "Batch #: RC118-A\n" },
-  { "name": "parse_wording_lot_hash", "type": "parse", "text": "Lot #: RC118-A\n" },
-  { "name": "parse_wording_lot_hash_no_space", "type": "parse", "text": "Lot#: RC118-A\n" },
-  { "name": "parse_wording_batch_code", "type": "parse", "text": "Batch Code: RC118-A\n" },
-  { "name": "parse_wording_batch_id", "type": "parse", "text": "Batch ID: RC118-A\n" },
-  { "name": "parse_wording_laboratory_name", "type": "parse", "text": "Laboratory Name: Meridian\n" },
-  { "name": "parse_wording_date_of_test", "type": "parse", "text": "Date of Test: 2026-02-14\n" },
-  { "name": "parse_wording_testing_date", "type": "parse", "text": "Testing Date: 2026-02-14\n" },
-  { "name": "parse_bare_hplc_and_bare_date_stay_unparsed", "type": "parse", "text": "HPLC: 99.3%\nDate: 2026-02-14\n" },
-  { "name": "parse_upper_bound_net_content_skips_the_math", "type": "parse", "text": "Purity: 99.1%\nNet Peptide Content: <70%\nQuantity: 5 mg\nMethod: HPLC\n" },
-  { "name": "parse_nmt_net_content_skips_the_math", "type": "parse", "text": "Purity: 99.1%\nNet Peptide Content: NMT 70%\nQuantity: 5 mg\nMethod: HPLC\n" },
-  { "name": "parse_lower_bound_net_content_still_computes", "type": "parse", "text": "Purity: 99.1%\nNet Peptide Content: >=80%\nQuantity: 5 mg\n" },
-  { "name": "parse_spelled_out_separator_beats_the_header_guard", "type": "parse", "text": "Method: Result\n" },
+  {
+    "name": "parse_mass_then_mol_wt_on_one_line",
+    "type": "parse",
+    "text": "Net Weight: 5 mg Mol. Wt: 1419.5\n"
+  },
+  {
+    "name": "parse_mass_then_molecular_formula_on_one_line",
+    "type": "parse",
+    "text": "Net Weight: 2 mg Molecular formula C62H98N16O22\n"
+  },
+  {
+    "name": "parse_net_peptide_content_without_percent_sign",
+    "type": "parse",
+    "text": "Net Peptide Content: 82.3\n"
+  },
+  {
+    "name": "parse_wording_peptide_purity_hplc",
+    "type": "parse",
+    "text": "Peptide Purity (HPLC): 99.3%\n"
+  },
+  {
+    "name": "parse_wording_purity_by_method",
+    "type": "parse",
+    "text": "Purity by HPLC: 99.3%\n"
+  },
+  {
+    "name": "parse_wording_purity_square_brackets",
+    "type": "parse",
+    "text": "Purity [HPLC]: 99.3%\n"
+  },
+  {
+    "name": "parse_wording_purity_comma_method",
+    "type": "parse",
+    "text": "Purity, HPLC: 99.3%\n"
+  },
+  {
+    "name": "parse_wording_purity_dot_leader",
+    "type": "parse",
+    "text": "Purity (HPLC) ...... 99.3%\n"
+  },
+  {
+    "name": "parse_wording_batch_hash",
+    "type": "parse",
+    "text": "Batch #: RC118-A\n"
+  },
+  {
+    "name": "parse_wording_lot_hash",
+    "type": "parse",
+    "text": "Lot #: RC118-A\n"
+  },
+  {
+    "name": "parse_wording_lot_hash_no_space",
+    "type": "parse",
+    "text": "Lot#: RC118-A\n"
+  },
+  {
+    "name": "parse_wording_batch_code",
+    "type": "parse",
+    "text": "Batch Code: RC118-A\n"
+  },
+  {
+    "name": "parse_wording_batch_id",
+    "type": "parse",
+    "text": "Batch ID: RC118-A\n"
+  },
+  {
+    "name": "parse_wording_laboratory_name",
+    "type": "parse",
+    "text": "Laboratory Name: Meridian\n"
+  },
+  {
+    "name": "parse_wording_date_of_test",
+    "type": "parse",
+    "text": "Date of Test: 2026-02-14\n"
+  },
+  {
+    "name": "parse_wording_testing_date",
+    "type": "parse",
+    "text": "Testing Date: 2026-02-14\n"
+  },
+  {
+    "name": "parse_bare_hplc_and_bare_date_stay_unparsed",
+    "type": "parse",
+    "text": "HPLC: 99.3%\nDate: 2026-02-14\n"
+  },
+  {
+    "name": "parse_upper_bound_net_content_skips_the_math",
+    "type": "parse",
+    "text": "Purity: 99.1%\nNet Peptide Content: <70%\nQuantity: 5 mg\nMethod: HPLC\n"
+  },
+  {
+    "name": "parse_nmt_net_content_skips_the_math",
+    "type": "parse",
+    "text": "Purity: 99.1%\nNet Peptide Content: NMT 70%\nQuantity: 5 mg\nMethod: HPLC\n"
+  },
+  {
+    "name": "parse_lower_bound_net_content_still_computes",
+    "type": "parse",
+    "text": "Purity: 99.1%\nNet Peptide Content: >=80%\nQuantity: 5 mg\n"
+  },
+  {
+    "name": "parse_spelled_out_separator_beats_the_header_guard",
+    "type": "parse",
+    "text": "Method: Result\n"
+  },
   {
     "name": "parse_two_fields_on_one_line",
     "type": "parse",
     "text": "Test Method: RP-HPLC    Test Date: 2026-02-14\n"
   },
-  { "name": "parse_batch_value_with_internal_spaces", "type": "parse", "text": "Batch No.: RC 118 A\n" },
+  {
+    "name": "parse_batch_value_with_internal_spaces",
+    "type": "parse",
+    "text": "Batch No.: RC 118 A\n"
+  },
   {
     "name": "parse_nlt_qualifier_is_a_lower_bound",
     "type": "parse",
@@ -145,20 +444,72 @@
     "type": "parse",
     "text": "Purity: NMT 98.0%\nNet Weight: 5 mg\nTest Method: RP-HPLC\n"
   },
-  { "name": "parse_min_dot_qualifier", "type": "parse", "text": "Purity: min. 98.0%\n" },
-  { "name": "parse_maximum_word_qualifier", "type": "parse", "text": "Purity: maximum 98.0%\n" },
-  { "name": "parse_greater_than_word_qualifier", "type": "parse", "text": "Purity: greater than 99%\n" },
-  { "name": "parse_not_less_than_word_qualifier", "type": "parse", "text": "Purity: not less than 99%\n" },
-  { "name": "parse_mcg_mass_normalized_to_mg", "type": "parse", "text": "Quantity: 5000 mcg\nPurity: 99%\n" },
-  { "name": "parse_micro_sign_mass_normalized_to_mg", "type": "parse", "text": "Net Weight: 5000 µg\n" },
-  { "name": "parse_greek_mu_mass_normalized_to_mg", "type": "parse", "text": "Net Weight: 5000 μg\n" },
-  { "name": "parse_ug_mass_normalized_to_mg", "type": "parse", "text": "Net Weight: 5000 ug\n" },
-  { "name": "parse_gram_mass_normalized_to_mg", "type": "parse", "text": "Net Weight: 0.005 g\nPurity: 99%\n" },
-  { "name": "parse_mg_per_vial_suffix_still_parses", "type": "parse", "text": "Quantity: 5 mg/vial\n" },
-  { "name": "parse_unknown_mass_unit_is_dropped", "type": "parse", "text": "Net Weight: 5 kg\n" },
-  { "name": "parse_absurdly_long_number_dropped", "type": "parse", "text": "Purity: 99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999%\nNet Weight: 5 mg\n" },
-
-  { "name": "purity_basic_no_net_content", "type": "purity", "labeled_mg": 5.0, "purity_pct": 98.0 },
+  {
+    "name": "parse_min_dot_qualifier",
+    "type": "parse",
+    "text": "Purity: min. 98.0%\n"
+  },
+  {
+    "name": "parse_maximum_word_qualifier",
+    "type": "parse",
+    "text": "Purity: maximum 98.0%\n"
+  },
+  {
+    "name": "parse_greater_than_word_qualifier",
+    "type": "parse",
+    "text": "Purity: greater than 99%\n"
+  },
+  {
+    "name": "parse_not_less_than_word_qualifier",
+    "type": "parse",
+    "text": "Purity: not less than 99%\n"
+  },
+  {
+    "name": "parse_mcg_mass_normalized_to_mg",
+    "type": "parse",
+    "text": "Quantity: 5000 mcg\nPurity: 99%\n"
+  },
+  {
+    "name": "parse_micro_sign_mass_normalized_to_mg",
+    "type": "parse",
+    "text": "Net Weight: 5000 \u00b5g\n"
+  },
+  {
+    "name": "parse_greek_mu_mass_normalized_to_mg",
+    "type": "parse",
+    "text": "Net Weight: 5000 \u03bcg\n"
+  },
+  {
+    "name": "parse_ug_mass_normalized_to_mg",
+    "type": "parse",
+    "text": "Net Weight: 5000 ug\n"
+  },
+  {
+    "name": "parse_gram_mass_normalized_to_mg",
+    "type": "parse",
+    "text": "Net Weight: 0.005 g\nPurity: 99%\n"
+  },
+  {
+    "name": "parse_mg_per_vial_suffix_still_parses",
+    "type": "parse",
+    "text": "Quantity: 5 mg/vial\n"
+  },
+  {
+    "name": "parse_unknown_mass_unit_is_dropped",
+    "type": "parse",
+    "text": "Net Weight: 5 kg\n"
+  },
+  {
+    "name": "parse_absurdly_long_number_dropped",
+    "type": "parse",
+    "text": "Purity: 99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999%\nNet Weight: 5 mg\n"
+  },
+  {
+    "name": "purity_basic_no_net_content",
+    "type": "purity",
+    "labeled_mg": 5.0,
+    "purity_pct": 98.0
+  },
   {
     "name": "purity_and_net_content_combine",
     "type": "purity",
@@ -166,8 +517,18 @@
     "purity_pct": 99.0,
     "net_content_pct": 92.0
   },
-  { "name": "purity_100_no_net_content", "type": "purity", "labeled_mg": 10.0, "purity_pct": 100.0 },
-  { "name": "purity_zero_is_total_shortfall", "type": "purity", "labeled_mg": 10.0, "purity_pct": 0.0 },
+  {
+    "name": "purity_100_no_net_content",
+    "type": "purity",
+    "labeled_mg": 10.0,
+    "purity_pct": 100.0
+  },
+  {
+    "name": "purity_zero_is_total_shortfall",
+    "type": "purity",
+    "labeled_mg": 10.0,
+    "purity_pct": 0.0
+  },
   {
     "name": "purity_100_and_net_content",
     "type": "purity",
@@ -175,7 +536,12 @@
     "purity_pct": 100.0,
     "net_content_pct": 80.0
   },
-  { "name": "purity_over_100_computes_through", "type": "purity", "labeled_mg": 5.0, "purity_pct": 150.0 },
+  {
+    "name": "purity_over_100_computes_through",
+    "type": "purity",
+    "labeled_mg": 5.0,
+    "purity_pct": 150.0
+  },
   {
     "name": "purity_net_content_over_100_computes_through",
     "type": "purity",
@@ -183,13 +549,41 @@
     "purity_pct": 99.0,
     "net_content_pct": 110.0
   },
-
-  { "name": "recon_basic_draw", "type": "recon", "vial_mg": 5.0, "water_ml": 2.0, "dose_mcg": 250.0 },
-  { "name": "recon_full_vial_as_single_dose", "type": "recon", "vial_mg": 1.0, "water_ml": 1.0, "dose_mcg": 1000.0 },
-  { "name": "recon_ten_mg_vial", "type": "recon", "vial_mg": 10.0, "water_ml": 5.0, "dose_mcg": 100.0 },
-  { "name": "recon_dose_exceeds_vial", "type": "recon", "vial_mg": 1.0, "water_ml": 1.0, "dose_mcg": 2000.0 },
-  { "name": "recon_dose_exactly_equals_vial", "type": "recon", "vial_mg": 1.0, "water_ml": 1.0, "dose_mcg": 1000.0 },
-
+  {
+    "name": "recon_basic_draw",
+    "type": "recon",
+    "vial_mg": 5.0,
+    "water_ml": 2.0,
+    "dose_mcg": 250.0
+  },
+  {
+    "name": "recon_full_vial_as_single_dose",
+    "type": "recon",
+    "vial_mg": 1.0,
+    "water_ml": 1.0,
+    "dose_mcg": 1000.0
+  },
+  {
+    "name": "recon_ten_mg_vial",
+    "type": "recon",
+    "vial_mg": 10.0,
+    "water_ml": 5.0,
+    "dose_mcg": 100.0
+  },
+  {
+    "name": "recon_dose_exceeds_vial",
+    "type": "recon",
+    "vial_mg": 1.0,
+    "water_ml": 1.0,
+    "dose_mcg": 2000.0
+  },
+  {
+    "name": "recon_dose_exactly_equals_vial",
+    "type": "recon",
+    "vial_mg": 1.0,
+    "water_ml": 1.0,
+    "dose_mcg": 1000.0
+  },
   {
     "name": "redflags_clean_all_pass",
     "type": "redflags",
@@ -204,57 +598,303 @@
       "lab_name": "Example Analytical Labs"
     }
   },
-  { "name": "redflags_missing_purity", "type": "redflags", "coa": { "purity_pct": null } },
-  { "name": "redflags_purity_over_100", "type": "redflags", "coa": { "purity_pct": 101.0 } },
-  { "name": "redflags_purity_negative", "type": "redflags", "coa": { "purity_pct": -5.0 } },
-  { "name": "redflags_purity_below_threshold", "type": "redflags", "coa": { "purity_pct": 97.9 } },
-  { "name": "redflags_purity_at_threshold", "type": "redflags", "coa": { "purity_pct": 98.0 } },
-  { "name": "redflags_purity_at_100", "type": "redflags", "coa": { "purity_pct": 100.0 } },
-  { "name": "redflags_missing_mass", "type": "redflags", "coa": { "mass_mg": null } },
-  { "name": "redflags_zero_mass", "type": "redflags", "coa": { "mass_mg": 0.0 } },
-  { "name": "redflags_negative_mass", "type": "redflags", "coa": { "mass_mg": -5.0 } },
-  { "name": "redflags_present_mass", "type": "redflags", "coa": { "mass_mg": 5.0 } },
-  { "name": "redflags_missing_batch", "type": "redflags", "coa": { "batch_lot": null } },
-  { "name": "redflags_present_batch", "type": "redflags", "coa": { "batch_lot": "X-1" } },
-  { "name": "redflags_missing_lab", "type": "redflags", "coa": { "lab_name": null } },
-  { "name": "redflags_placeholder_lab_na", "type": "redflags", "coa": { "lab_name": "N/A" } },
-  { "name": "redflags_placeholder_lab_inhouse", "type": "redflags", "coa": { "lab_name": "In-house" } },
-  { "name": "redflags_placeholder_lab_undisclosed", "type": "redflags", "coa": { "lab_name": "Undisclosed" } },
-  { "name": "redflags_named_lab", "type": "redflags", "coa": { "lab_name": "Example Labs Inc." } },
-  { "name": "redflags_missing_method", "type": "redflags", "coa": { "method": null } },
-  { "name": "redflags_missing_date", "type": "redflags", "coa": { "test_date": null } },
+  {
+    "name": "redflags_missing_purity",
+    "type": "redflags",
+    "coa": {
+      "purity_pct": null
+    }
+  },
+  {
+    "name": "redflags_purity_over_100",
+    "type": "redflags",
+    "coa": {
+      "purity_pct": 101.0
+    }
+  },
+  {
+    "name": "redflags_purity_negative",
+    "type": "redflags",
+    "coa": {
+      "purity_pct": -5.0
+    }
+  },
+  {
+    "name": "redflags_purity_below_threshold",
+    "type": "redflags",
+    "coa": {
+      "purity_pct": 97.9
+    }
+  },
+  {
+    "name": "redflags_purity_at_threshold",
+    "type": "redflags",
+    "coa": {
+      "purity_pct": 98.0
+    }
+  },
+  {
+    "name": "redflags_purity_at_100",
+    "type": "redflags",
+    "coa": {
+      "purity_pct": 100.0
+    }
+  },
+  {
+    "name": "redflags_missing_mass",
+    "type": "redflags",
+    "coa": {
+      "mass_mg": null
+    }
+  },
+  {
+    "name": "redflags_zero_mass",
+    "type": "redflags",
+    "coa": {
+      "mass_mg": 0.0
+    }
+  },
+  {
+    "name": "redflags_negative_mass",
+    "type": "redflags",
+    "coa": {
+      "mass_mg": -5.0
+    }
+  },
+  {
+    "name": "redflags_present_mass",
+    "type": "redflags",
+    "coa": {
+      "mass_mg": 5.0
+    }
+  },
+  {
+    "name": "redflags_missing_batch",
+    "type": "redflags",
+    "coa": {
+      "batch_lot": null
+    }
+  },
+  {
+    "name": "redflags_present_batch",
+    "type": "redflags",
+    "coa": {
+      "batch_lot": "X-1"
+    }
+  },
+  {
+    "name": "redflags_missing_lab",
+    "type": "redflags",
+    "coa": {
+      "lab_name": null
+    }
+  },
+  {
+    "name": "redflags_placeholder_lab_na",
+    "type": "redflags",
+    "coa": {
+      "lab_name": "N/A"
+    }
+  },
+  {
+    "name": "redflags_placeholder_lab_inhouse",
+    "type": "redflags",
+    "coa": {
+      "lab_name": "In-house"
+    }
+  },
+  {
+    "name": "redflags_placeholder_lab_undisclosed",
+    "type": "redflags",
+    "coa": {
+      "lab_name": "Undisclosed"
+    }
+  },
+  {
+    "name": "redflags_named_lab",
+    "type": "redflags",
+    "coa": {
+      "lab_name": "Example Labs Inc."
+    }
+  },
+  {
+    "name": "redflags_missing_method",
+    "type": "redflags",
+    "coa": {
+      "method": null
+    }
+  },
+  {
+    "name": "redflags_missing_date",
+    "type": "redflags",
+    "coa": {
+      "test_date": null
+    }
+  },
   {
     "name": "redflags_purity_without_method",
     "type": "redflags",
-    "coa": { "purity_pct": 99.0, "method": null }
+    "coa": {
+      "purity_pct": 99.0,
+      "method": null
+    }
   },
   {
     "name": "redflags_purity_with_method",
     "type": "redflags",
-    "coa": { "purity_pct": 99.0, "method": "HPLC" }
+    "coa": {
+      "purity_pct": 99.0,
+      "method": "HPLC"
+    }
   },
   {
     "name": "redflags_no_purity_claim_purity_method_not_applicable",
     "type": "redflags",
-    "coa": { "purity_pct": null, "method": null }
+    "coa": {
+      "purity_pct": null,
+      "method": null
+    }
   },
-  { "name": "redflags_missing_net_content", "type": "redflags", "coa": { "net_content_pct": null } },
-  { "name": "redflags_net_content_over_100", "type": "redflags", "coa": { "net_content_pct": 104.0 } },
-  { "name": "redflags_net_content_zero", "type": "redflags", "coa": { "net_content_pct": 0.0 } },
-  { "name": "redflags_net_content_negative", "type": "redflags", "coa": { "net_content_pct": -1.0 } },
-  { "name": "redflags_net_content_at_100", "type": "redflags", "coa": { "net_content_pct": 100.0 } },
-  { "name": "redflags_placeholder_lab_tbd", "type": "redflags", "coa": { "lab_name": "TBD" } },
-  { "name": "redflags_placeholder_lab_na_dots", "type": "redflags", "coa": { "lab_name": "N.A." } },
-  { "name": "redflags_placeholder_lab_dash", "type": "redflags", "coa": { "lab_name": "-" } },
-  { "name": "redflags_placeholder_lab_not_disclosed", "type": "redflags", "coa": { "lab_name": "Not disclosed" } },
-  { "name": "redflags_placeholder_lab_inhouse_lab", "type": "redflags", "coa": { "lab_name": "In-House Lab" } },
-  { "name": "redflags_real_lab_with_stem_word_passes", "type": "redflags", "coa": { "lab_name": "Private Analytics" } },
-  { "name": "redflags_purity_upper_bound_warn", "type": "redflags", "coa": { "purity_pct": 99.0, "purity_qualifier": "<" } },
-  { "name": "redflags_purity_less_equal_upper_bound_warn", "type": "redflags", "coa": { "purity_pct": 97.0, "purity_qualifier": "<=" } },
-  { "name": "redflags_net_content_upper_bound_warn", "type": "redflags", "coa": { "net_content_pct": 70.0, "net_content_qualifier": "<" } },
-  { "name": "redflags_net_content_lower_bound_pass", "type": "redflags", "coa": { "net_content_pct": 80.0, "net_content_qualifier": ">=" } },
-  { "name": "redflags_purity_impossible_1e6_formatg", "type": "redflags", "coa": { "purity_pct": 1000000.0 } },
-  { "name": "redflags_purity_tiny_1e-7_formatg", "type": "redflags", "coa": { "purity_pct": 0.0000001 } },
-  { "name": "redflags_net_content_1e6_formatg", "type": "redflags", "coa": { "net_content_pct": 1000000.0 } },
-  { "name": "redflags_purity_1e21_formatg", "type": "redflags", "coa": { "purity_pct": 1e21 } }
+  {
+    "name": "redflags_missing_net_content",
+    "type": "redflags",
+    "coa": {
+      "net_content_pct": null
+    }
+  },
+  {
+    "name": "redflags_net_content_over_100",
+    "type": "redflags",
+    "coa": {
+      "net_content_pct": 104.0
+    }
+  },
+  {
+    "name": "redflags_net_content_zero",
+    "type": "redflags",
+    "coa": {
+      "net_content_pct": 0.0
+    }
+  },
+  {
+    "name": "redflags_net_content_negative",
+    "type": "redflags",
+    "coa": {
+      "net_content_pct": -1.0
+    }
+  },
+  {
+    "name": "redflags_net_content_at_100",
+    "type": "redflags",
+    "coa": {
+      "net_content_pct": 100.0
+    }
+  },
+  {
+    "name": "redflags_placeholder_lab_tbd",
+    "type": "redflags",
+    "coa": {
+      "lab_name": "TBD"
+    }
+  },
+  {
+    "name": "redflags_placeholder_lab_na_dots",
+    "type": "redflags",
+    "coa": {
+      "lab_name": "N.A."
+    }
+  },
+  {
+    "name": "redflags_placeholder_lab_dash",
+    "type": "redflags",
+    "coa": {
+      "lab_name": "-"
+    }
+  },
+  {
+    "name": "redflags_placeholder_lab_not_disclosed",
+    "type": "redflags",
+    "coa": {
+      "lab_name": "Not disclosed"
+    }
+  },
+  {
+    "name": "redflags_placeholder_lab_inhouse_lab",
+    "type": "redflags",
+    "coa": {
+      "lab_name": "In-House Lab"
+    }
+  },
+  {
+    "name": "redflags_real_lab_with_stem_word_passes",
+    "type": "redflags",
+    "coa": {
+      "lab_name": "Private Analytics"
+    }
+  },
+  {
+    "name": "redflags_purity_upper_bound_warn",
+    "type": "redflags",
+    "coa": {
+      "purity_pct": 99.0,
+      "purity_qualifier": "<"
+    }
+  },
+  {
+    "name": "redflags_purity_less_equal_upper_bound_warn",
+    "type": "redflags",
+    "coa": {
+      "purity_pct": 97.0,
+      "purity_qualifier": "<="
+    }
+  },
+  {
+    "name": "redflags_net_content_upper_bound_warn",
+    "type": "redflags",
+    "coa": {
+      "net_content_pct": 70.0,
+      "net_content_qualifier": "<"
+    }
+  },
+  {
+    "name": "redflags_net_content_lower_bound_pass",
+    "type": "redflags",
+    "coa": {
+      "net_content_pct": 80.0,
+      "net_content_qualifier": ">="
+    }
+  },
+  {
+    "name": "redflags_purity_impossible_1e6_formatg",
+    "type": "redflags",
+    "coa": {
+      "purity_pct": 1000000.0
+    }
+  },
+  {
+    "name": "redflags_purity_tiny_1e-7_formatg",
+    "type": "redflags",
+    "coa": {
+      "purity_pct": 1e-07
+    }
+  },
+  {
+    "name": "redflags_net_content_1e6_formatg",
+    "type": "redflags",
+    "coa": {
+      "net_content_pct": 1000000.0
+    }
+  },
+  {
+    "name": "redflags_purity_1e21_formatg",
+    "type": "redflags",
+    "coa": {
+      "purity_pct": 1e+21
+    }
+  },
+  {
+    "name": "fixture_coa_two_tests_one_row",
+    "type": "parse",
+    "fixture": "coa_two_tests_one_row.txt"
+  }
 ]

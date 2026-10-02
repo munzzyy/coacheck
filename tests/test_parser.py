@@ -353,6 +353,25 @@ class SpecBeforeResult(unittest.TestCase):
         self.assertIsNone(coa.purity_pct)
         self.assertEqual(coa.net_content_pct, 85.0)
 
+
+    def test_another_tests_label_between_never_hands_over_its_value(self):
+        # "Net Peptide Content    Water Content    5.2%": 5.2 belongs to the
+        # water test. Gluing it to net content turned a 5 mg vial into a
+        # 0.26 mg one and a 19x larger draw, with nothing flagged.
+        coa = parse_coa("Purity: 99.1%\nNet Peptide Content    Water Content    5.2%\nQuantity: 5 mg\n")
+        self.assertEqual(coa.purity_pct, 99.1)
+        self.assertIsNone(coa.net_content_pct)
+        coa = parse_coa("Purity (HPLC)    Impurities    0.8%\nQuantity: 5 mg\n")
+        self.assertIsNone(coa.purity_pct)
+        coa = parse_coa("Net Peptide Content    TFA Content    12.1%\nQuantity: 5 mg\n")
+        self.assertIsNone(coa.net_content_pct)
+
+    def test_a_method_column_is_still_skipped(self):
+        coa = parse_coa("Purity  HPLC  NLT 98.0%  95.1%\nNet Peptide Content  AAA  82.3%\nQuantity: 5 mg\n")
+        self.assertEqual(coa.purity_pct, 95.1)
+        self.assertEqual(coa.net_content_pct, 82.3)
+        coa = parse_coa("Purity  Mass Spectrometry  99.4%\n")
+        self.assertEqual(coa.purity_pct, 99.4)
     def test_spec_before_result_fixture(self):
         coa = parse_coa(fixture_text("coa_spec_before_result.txt"))
         self.assertEqual(coa.purity_pct, 95.1)

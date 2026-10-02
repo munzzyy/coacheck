@@ -264,14 +264,21 @@ function tiers(segs) {
 // it ("Purity  HPLC  NLT 98.0%  95.1%"). The run stops at the first other column, and the
 // column in between can't be a percentage label itself, so another test on the same row keeps
 // its own value.
+// A column that may sit between a label and its percentages: the spec ("NLT 98.0%") or the
+// method the row names. Anything else is another test's label, and gluing past it would hand
+// this label that test's value.
+const METHOD_COLUMN = new RegExp(
+  `^(?:${PURITY_METHOD}|aaa|amino acid analysis|ms|mass spec(?:trometry)?|lc-?ms(?:/ms)?|maldi(?:-tof)?|esi-?ms|nmr|karl fischer|kf|gc|uv|ft-?ir)\\s*$`,
+  "i",
+);
+
 function pctCandidates(line) {
   const segs = segments(line);
   const [direct, joined] = tiers(segs);
   const cells = segs.map((s) => PCT_CELL.test(s));
   for (let i = 0; i < segs.length - 2; i++) {
     if (cells[i]) continue;
-    const between = `${segs[i + 1]}: ${segs[i + 2]}`;
-    if (!cells[i + 1] && PCT_FIELD_PATTERNS.some((p) => p.test(between))) continue;
+    if (!cells[i + 1] && !METHOD_COLUMN.test(segs[i + 1].trim())) continue;
     for (let j = i + 2; j < segs.length; j++) {
       if (!cells[j]) break;
       joined.push(`${segs[i]}: ${segs[j]}`);

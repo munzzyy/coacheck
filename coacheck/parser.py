@@ -296,19 +296,28 @@ def _tiers(segments: list[str]) -> tuple[list[str], list[str]]:
     return segments, joined
 
 
+# A column that may sit between a label and its percentages: the spec
+# ("NLT 98.0%") or the method the row names. Anything else is another test's
+# label, and gluing past it would hand this label that test's value.
+_METHOD_COLUMN = re.compile(
+    r"^(?:" + _PURITY_METHOD + r"|aaa|amino acid analysis|ms|mass spec(?:trometry)?|"
+    r"lc-?ms(?:/ms)?|maldi(?:-tof)?|esi-?ms|nmr|karl fischer|kf|gc|uv|ft-?ir)\s*$",
+    re.IGNORECASE,
+)
+
+
 def _pct_candidates(line: str) -> tuple[list[str], list[str]]:
     """_candidates, plus each label column glued to the run of percentage
     columns one column past it ("Purity  HPLC  NLT 98.0%  95.1%"). The run stops
-    at the first other column, and the column in between can't be a percentage
-    label itself, so another test on the same row keeps its own value."""
+    at the first other column, and the column in between has to be the spec or
+    a method name, so another test on the same row keeps its own value."""
     segments = _segments(line)
     direct, joined = _tiers(segments)
     cells = [bool(_PCT_CELL.match(s)) for s in segments]
     for i in range(len(segments) - 2):
         if cells[i]:
             continue
-        between = f"{segments[i + 1]}: {segments[i + 2]}"
-        if not cells[i + 1] and any(p.match(between) for p in _PCT_FIELD_PATTERNS):
+        if not cells[i + 1] and not _METHOD_COLUMN.match(segments[i + 1].strip()):
             continue
         for j in range(i + 2, len(segments)):
             if not cells[j]:
